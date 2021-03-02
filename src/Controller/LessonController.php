@@ -1,0 +1,141 @@
+<?php
+
+namespace App\Controller;
+
+use App\Entity\Lesson;
+use App\Form\LessonType;
+use App\Repository\LessonRepository;
+use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\Routing\Annotation\Route;
+
+/**
+ * @Route("/lessons")
+ */
+class LessonController extends AbstractController
+{
+
+
+    /**
+     * @Route("/", name="lesson_index", methods={"GET"})
+     */
+    public function index(LessonRepository $lessonRepository): Response
+    {
+        return $this->render(
+            'lesson/index.html.twig',
+            [
+                'lessons' => $lessonRepository->findAll(),
+            ]
+        );
+
+    }
+
+
+    /**
+     * @Route("/new", name="lesson_new", methods={"GET","POST"})
+     */
+    public function new(Request $request): Response
+    {
+        $lesson = new Lesson();
+        $form   = $this->createForm(
+            LessonType::class,
+            $lesson,
+            ['course_id' => $request->query->get('course_id')]
+        );
+        //$form->get('course')->setData();
+        $form->handleRequest($request);
+
+        if ($form->isSubmitted() === true && $form->isValid() === true) {
+            $entityManager = $this->getDoctrine()->getManager();
+            $entityManager->persist($lesson);
+            $entityManager->flush();
+
+            return $this->redirectToRoute(
+                'course_show',
+                [
+                    'id' => $lesson
+                        ->getCourse()
+                        ->getId(),
+                ]
+            );
+        }
+
+        //var_dump($request->query->get('course_id'));
+        return $this->render(
+            'lesson/new.html.twig',
+            [
+                'lesson' => $lesson,
+                'form'   => $form->createView(),
+            ]
+        );
+
+    }
+
+
+    /**
+     * @Route("/{id}", name="lesson_show", methods={"GET"})
+     */
+    public function show(Lesson $lesson): Response
+    {
+        return $this->render(
+            'lesson/show.html.twig',
+            ['lesson' => $lesson]
+        );
+
+    }
+
+
+    /**
+     * @Route("/{id}/edit", name="lesson_edit", methods={"GET","POST"})
+     */
+    public function edit(Request $request, Lesson $lesson): Response
+    {
+        $form = $this->createForm(
+            LessonType::class,
+            $lesson,
+            ['course_id' => (string) $lesson->getCourse()->getId()]
+        );
+        $form->handleRequest($request);
+
+        if ($form->isSubmitted() === true && $form->isValid() === true) {
+            $this->getDoctrine()->getManager()->flush();
+
+            return $this->redirectToRoute('lesson_show', ['id' => $lesson->getId()]);
+        }
+
+        return $this->render(
+            'lesson/edit.html.twig',
+            [
+                'lesson' => $lesson,
+                'form'   => $form->createView(),
+            ]
+        );
+
+    }
+
+
+    /**
+     * @Route("/{id}", name="lesson_delete", methods={"DELETE"})
+     */
+    public function delete(Request $request, Lesson $lesson): Response
+    {
+        if ($this->isCsrfTokenValid('delete'.$lesson->getId(), $request->request->get('_token')) === true) {
+            $entityManager = $this->getDoctrine()->getManager();
+            $entityManager->remove($lesson);
+            $entityManager->flush();
+        }
+
+        return $this->redirectToRoute(
+            'course_show',
+            [
+                'id' => $lesson
+                    ->getCourse()
+                    ->getId(),
+            ]
+        );
+
+    }
+
+
+}

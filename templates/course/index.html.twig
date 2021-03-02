@@ -1,0 +1,21 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Курсы/StudyOn{% endblock %}
+
+{% block body %}
+    <h1>Курсы</h1>
+
+    {% for course in courses %}
+        <h3><a href="{{ path('course_show', {'id': course.id}) }}">{{ course.name }}</a></h3>
+        {% if course.description is not empty  %}
+            <br>
+            {{ course.description }}
+            <br>
+        {% endif %}
+
+    {% else %}
+        Не найдено курсов
+    {% endfor %}
+
+    <a href="{{ path('course_new') }}">Новый курс</a>
+{% endblock %}

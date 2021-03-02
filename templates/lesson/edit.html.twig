@@ -1,0 +1,15 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Редактирование/{{ lesson.name }}/{{ lesson.course.name }}/StudyOn{% endblock %}
+
+{% block body %}
+    <h1>{{ lesson.name }}</h1>
+
+    Курс <a href="{{ path('course_show', {'id': lesson.course.id}) }}">{{ lesson.course.name }}</a>
+    <br>
+    <br>
+
+    {{ include('lesson/_form.html.twig', {'button_label': 'Обновить'}) }}
+
+    {{ include('lesson/_delete_form.html.twig') }}
+{% endblock %}

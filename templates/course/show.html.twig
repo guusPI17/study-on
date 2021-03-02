@@ -1,0 +1,24 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ course.name }}/StudyOn{% endblock %}
+
+{% block body %}
+    <h1>{{ course.name }}</h1>
+    {% if course.description is not empty  %}
+        <br>
+        {{ course.description }}
+        <br>
+    {% endif %}
+
+    {{ include('lesson/index.html.twig') }}
+
+    <br>
+
+    <a href="{{ path('course_index') }}">К списку курсов</a>
+
+    <a href="{{ path('course_edit', {'id': course.id}) }}">Редактировать курс</a>
+
+    <a href="{{ path('lesson_new', app.request.query.all|merge({ 'course_id': course.id }))}}">Добавить урок</a>
+
+    {{ include('course/_delete_form.html.twig') }}
+{% endblock %}

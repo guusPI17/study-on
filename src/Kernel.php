@@ -9,6 +9,8 @@ use Symfony\Component\Routing\Loader\Configurator\RoutingConfigurator;
 
 class Kernel extends BaseKernel
 {
+
+
     use MicroKernelTrait;
 
     protected function configureContainer(ContainerConfigurator $container): void
@@ -22,6 +24,7 @@ class Kernel extends BaseKernel
         } elseif (is_file($path = \dirname(__DIR__).'/config/services.php')) {
             (require $path)($container->withPath($path), $this);
         }
+
     }
 
     protected function configureRoutes(RoutingConfigurator $routes): void
@@ -34,5 +37,8 @@ class Kernel extends BaseKernel
         } elseif (is_file($path = \dirname(__DIR__).'/config/routes.php')) {
             (require $path)($routes->withPath($path), $this);
         }
+
     }
+
+
 }

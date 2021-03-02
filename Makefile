@@ -22,4 +22,4 @@ fixtload:
 	@${CONSOLE} doctrine:fixtures:load
 
 exec-php:
-	@${COMPOSE} exec php /bin/sh
+	@${PHP} /bin/sh
