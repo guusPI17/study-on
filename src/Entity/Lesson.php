@@ -11,7 +11,6 @@ use Symfony\Component\Validator\Constraints as Assert;
  */
 class Lesson
 {
-
     /**
      * @ORM\Id
      * @ORM\GeneratedValue
@@ -49,12 +48,10 @@ class Lesson
         return $this->id;
     }
 
-
     public function getCourse(): ?Course
     {
         return $this->course;
     }
-
 
     public function setCourse(?Course $course): self
     {
@@ -63,12 +60,10 @@ class Lesson
         return $this;
     }
 
-
     public function getName(): ?string
     {
         return $this->name;
     }
-
 
     public function setName(string $name): self
     {
@@ -77,12 +72,10 @@ class Lesson
         return $this;
     }
 
-
     public function getContent(): ?string
     {
         return $this->content;
     }
-
 
     public function setContent(?string $content): self
     {
@@ -91,12 +84,10 @@ class Lesson
         return $this;
     }
 
-
     public function getNumber(): ?int
     {
         return $this->number;
     }
-
 
     public function setNumber(?int $number): self
     {
@@ -104,6 +95,4 @@ class Lesson
 
         return $this;
     }
-
-
 }

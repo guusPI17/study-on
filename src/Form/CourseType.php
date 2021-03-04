@@ -13,8 +13,6 @@ use Symfony\Component\Validator\Constraints\NotBlank;
 
 class CourseType extends AbstractType
 {
-
-
     public function buildForm(FormBuilderInterface $builder, array $options)
     {
         $builder
@@ -26,8 +24,8 @@ class CourseType extends AbstractType
                         new NotBlank(['message' => 'Заполните code']),
                         new Length(
                             [
-                                'min'        => 1,
-                                'max'        => 255,
+                                'min' => 1,
+                                'max' => 255,
                                 'minMessage' => 'Длина должна быть не менее  {{ limit }} символов',
                                 'maxMessage' => 'Длина должна быть не более  {{ limit }} символов',
                             ]
@@ -43,8 +41,8 @@ class CourseType extends AbstractType
                         new NotBlank(['message' => 'Заполните название']),
                         new Length(
                             [
-                                'min'        => 1,
-                                'max'        => 255,
+                                'min' => 1,
+                                'max' => 255,
                                 'minMessage' => 'Длина должна быть не менее  {{ limit }} символов',
                                 'maxMessage' => 'Длина должна быть не более  {{ limit }} символов',
                             ]
@@ -56,20 +54,18 @@ class CourseType extends AbstractType
                 'description',
                 TextareaType::class,
                 [
-                    'required'    => false,
+                    'required' => false,
                     'constraints' => [
                         new Length(
                             [
-                                'max'        => 1000,
+                                'max' => 1000,
                                 'maxMessage' => 'Длина должна быть не более  {{ limit }} символов',
                             ]
                         ),
                     ],
                 ]
             );
-
     }
-
 
     public function configureOptions(OptionsResolver $resolver)
     {
@@ -78,8 +74,5 @@ class CourseType extends AbstractType
                 'data_class' => Course::class,
             ]
         );
-
     }
-
-
 }

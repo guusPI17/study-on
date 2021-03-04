@@ -3,19 +3,76 @@
 {% block title %}Курсы/StudyOn{% endblock %}
 
 {% block body %}
-    <h1>Курсы</h1>
+    <header>
+        {% block header %}
+            {{ parent() }}
+        {% endblock %}
+    </header>
+
+    <h1 class="center-h1">Курсы</h1>
 
     {% for course in courses %}
-        <h3><a href="{{ path('course_show', {'id': course.id}) }}">{{ course.name }}</a></h3>
-        {% if course.description is not empty  %}
-            <br>
-            {{ course.description }}
-            <br>
-        {% endif %}
-
+        <div class="container">
+            <div class="row">
+                <div class="col"></div>
+                <div class="col-8">
+                    <div class="row border border-dark shadow p-3 mb-5 bg-white">
+                        <div class="col"></div>
+                        <div class="col-10 text-center">
+                            <h3>
+                                {{ course.name }}
+                            </h3>
+                            {% if course.description is not empty %}
+                                <div class="row">
+                                    <div class="col"></div>
+                                    <div class="col-auto">
+                                        {{ course.description }}
+                                    </div>
+                                    <div class="col"></div>
+                                </div>
+                            {% endif %}
+                            <div class="linq-button">
+                                <a href="{{ path('course_show', {'id': course.id}) }}">Пройти</a>
+                            </div>
+                        </div>
+                        <div class="col"></div>
+                    </div>
+                </div>
+                <div class="col"></div>
+            </div>
+        </div>
     {% else %}
-        Не найдено курсов
+        <div class="container">
+            <div class="row">
+                <div class="col"></div>
+                <div class="col-8 row border border-primary shadow p-3 mb-5 bg-white">
+                    <div class="col-10 text-center">
+                        Курсы отсутствуют.
+                    </div>
+                </div>
+                <div class="col"></div>
+            </div>
+        </div>
     {% endfor %}
+    <div class="container">
+        <div class="row">
+            <div class="col"></div>
+            <div class="col-8">
+                <div class="line">
+                </div>
+            </div>
+            <div class="col"></div>
+        </div>
+        <div class="row">
+            <div class="col text-center">
+                <a href="{{ path('course_new') }}" class="btn btn-light" role="button">Новый курс</a>
+            </div>
+        </div>
+    </div>
 
-    <a href="{{ path('course_new') }}">Новый курс</a>
+    <footer>
+        {% block footer %}
+            {{ parent() }}
+        {% endblock %}
+    </footer>
 {% endblock %}

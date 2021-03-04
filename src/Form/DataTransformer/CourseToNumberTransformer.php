@@ -1,6 +1,5 @@
 <?php
 
-
 namespace App\Form\DataTransformer;
 
 use App\Entity\Course;
@@ -10,7 +9,6 @@ use Symfony\Component\Form\Exception\TransformationFailedException;
 
 class CourseToNumberTransformer implements DataTransformerInterface
 {
-
     private $entityManager;
 
     public function __construct(EntityManagerInterface $entityManager)
@@ -25,7 +23,7 @@ class CourseToNumberTransformer implements DataTransformerInterface
      */
     public function transform($course): string
     {
-        if ($course === null) {
+        if (null === $course) {
             return '';
         }
 
@@ -36,11 +34,12 @@ class CourseToNumberTransformer implements DataTransformerInterface
      * Transforms a string (number) to an object (Course).
      *
      * @param string $courseNumber
-     * @throws TransformationFailedException if object (Course) is not found.
+     *
+     * @throws TransformationFailedException if object (Course) is not found
      */
     public function reverseTransform($courseNumber): ?Course
     {
-        if ($courseNumber === false) {
+        if (false === $courseNumber) {
             return null;
         }
 
@@ -48,17 +47,10 @@ class CourseToNumberTransformer implements DataTransformerInterface
             ->getRepository(Course::class)
             ->find($courseNumber);
 
-        if ($course === null) {
-            throw new TransformationFailedException(
-                sprintf(
-                    'An course with number "%s" does not exist!',
-                    $courseNumber
-                )
-            );
+        if (null === $course) {
+            throw new TransformationFailedException(sprintf('An course with number "%s" does not exist!', $courseNumber));
         }
 
         return $course;
     }
-
-
 }

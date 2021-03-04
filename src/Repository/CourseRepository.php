@@ -14,13 +14,10 @@ use Doctrine\Persistence\ManagerRegistry;
  */
 class CourseRepository extends ServiceEntityRepository
 {
-
-
     public function __construct(ManagerRegistry $registry)
     {
         parent::__construct($registry, Course::class);
     }
-
 
     // /**
     //  * @return Course[] Returns an array of Course objects

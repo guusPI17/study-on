@@ -13,8 +13,6 @@ services:
       - "${NGINX_PORT}:80"
     links:
       - php
-    networks:
-      - internal
   postgres:
     image: postgres:alpine
     volumes:
@@ -32,17 +30,17 @@ services:
       - ${PWD}:/app
       - ${HOME}/.composer:/.composer
     environment:
-      COMPOSER_ALLOW_SUPERUSER: 1
-      XDEBUG_CONFIG: "remote_host=192.168.221.1 remote_enable=1"
-      PHP_IDE_CONFIG: "serverName=Docker"
+      - COMPOSER_ALLOW_SUPERUSER=1
     links:
       - postgres
-    networks:
-      - internal
-networks:
-  internal:
-    driver: bridge
-    ipam:
-      driver: default
-      config:
-        - subnet: 192.168.221.0/24
+  node:
+    image: node:alpine
+    environment:
+      - YARN_CACHE_FOLDER=/yarn
+    working_dir: /app
+    user: ${UID:-1000}:${GID:-1000}
+    volumes:
+      - ${PWD}:/app
+      - ${HOME}/.yarn:/yarn
+
+

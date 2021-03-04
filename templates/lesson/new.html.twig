@@ -1,11 +1,24 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}Создание урока/StudyOn{% endblock %}
+{% block title %}Создание урока/{{ course.getName() }}/StudyOn{% endblock %}
 
 {% block body %}
-    <h1>Новый урок</h1>
+    <header>
+        {% block header %}
+            {{ parent() }}
+        {% endblock %}
+    </header>
+    <h1 class="center-h1">Новый урок</h1>
 
     {{ include('lesson/_form.html.twig') }}
 
-    <a href="{{ path('lesson_index') }}">Назад</a>
+    <div class="container">
+        <div class="row">
+            <div class="col">
+                <div class="line">
+                </div>
+                <a href="{{ path('course_show', {'id': course.getId()}) }}" class="btn btn-light" role="button">Назад</a>
+            </div>
+        </div>
+    </div>
 {% endblock %}

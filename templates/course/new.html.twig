@@ -3,9 +3,28 @@
 {% block title %}Создание курса/StudyOn{% endblock %}
 
 {% block body %}
-    <h1>Новый курс</h1>
+    <header>
+        {% block header %}
+            {{ parent() }}
+        {% endblock %}
+    </header>
+    <h1 class="center-h1">Новый курс</h1>
 
     {{ include('course/_form.html.twig') }}
 
-    <a href="{{ path('course_index') }}">назад</a>
+    <div class="container">
+        <div class="row">
+            <div class="col">
+                <div class="line">
+                </div>
+                <a href="{{ path('course_index') }}" class="btn btn-light" role="button">К списку курсов</a>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        {% block footer %}
+            {{ parent() }}
+        {% endblock %}
+    </footer>
 {% endblock %}

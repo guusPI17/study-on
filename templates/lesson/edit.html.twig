@@ -3,13 +3,35 @@
 {% block title %}Редактирование/{{ lesson.name }}/{{ lesson.course.name }}/StudyOn{% endblock %}
 
 {% block body %}
-    <h1>{{ lesson.name }}</h1>
+    <header>
+        {% block header %}
+            {{ parent() }}
+        {% endblock %}
+    </header>
 
-    Курс <a href="{{ path('course_show', {'id': lesson.course.id}) }}">{{ lesson.course.name }}</a>
-    <br>
-    <br>
+    <h1 class="center-h1">{{ lesson.name }}</h1>
+
+    <div class="container">
+        <div class="row">
+            <div class="col"></div>
+            <div class="col-8">
+                Курс <a href="{{ path('course_show', {'id': lesson.course.id}) }}">{{ lesson.course.name }}</a>
+            </div>
+            <div class="col"></div>
+        </div>
+    </div>
 
     {{ include('lesson/_form.html.twig', {'button_label': 'Обновить'}) }}
+
+    <div class="container">
+        <div class="row">
+            <div class="col">
+                <div class="line">
+                </div>
+            </div>
+        </div>
+    </div>
+
 
     {{ include('lesson/_delete_form.html.twig') }}
 {% endblock %}

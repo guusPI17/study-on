@@ -1,17 +1,14 @@
 <?php
 
-
 namespace App\DataFixtures;
 
-use App\Entity\Lesson;
 use App\Entity\Course;
+use App\Entity\Lesson;
 use Doctrine\Bundle\FixturesBundle\Fixture;
 use Doctrine\Persistence\ObjectManager;
 
 class CourseFixtures extends Fixture
 {
-
-
     public function load(ObjectManager $manager)
     {
         $descriptionsCourses = [
@@ -78,7 +75,7 @@ class CourseFixtures extends Fixture
 WPF предустановлена в Windows Vista (.NET Framework 3.0), Windows 7 (.NET Framework 3.5 SP1), Windows 8 (.NET Framework 4.0 и 4.5), Windows 8.1 (.NET Framework 4.5.1) и Windows 10 (.NET Framework 4.7). С помощью WPF можно создавать широкий спектр как автономных, так и запускаемых в браузере приложений[2].',
         ];
 
-        for ($i = 0, $t = 0; $i < 3; $i++) {
+        for ($i = 0, $t = 0; $i < 3; ++$i) {
             $course = new Course();
             $course->setCode($codeCourses[$i]);
             $course->setName($nameCourses[$i]);
@@ -91,19 +88,10 @@ WPF предустановлена в Windows Vista (.NET Framework 3.0), Window
         }
 
         $manager->flush();
-
     }
 
-
     /**
-     * Создание урока
-     *
-     * @param  Course  $course
-     * @param  integer $number
-     * @param  string  $name
-     * @param  string  $content
-     *
-     * @return Lesson
+     * Создание урока.
      */
     private function createLesson(Course $course, int $number, string $name, string $content): Lesson
     {
@@ -112,9 +100,7 @@ WPF предустановлена в Windows Vista (.NET Framework 3.0), Window
         $lesson->setNumber($number);
         $lesson->setName($name);
         $lesson->setContent($content);
+
         return $lesson;
-
     }
-
-
 }

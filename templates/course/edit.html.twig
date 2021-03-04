@@ -3,11 +3,30 @@
 {% block title %}Редактирование/{{ course.name }}/StudyOn{% endblock %}
 
 {% block body %}
-    <h1>Edit Course</h1>
+    <header>
+        {% block header %}
+            {{ parent() }}
+        {% endblock %}
+    </header>
+
+    <h1 class="center-h1">{{ course.name }}</h1>
 
     {{ include('course/_form.html.twig', {'button_label': 'Обновить'}) }}
 
-    <a href="{{ path('course_show', {'id': course.id}) }}">Назад</a>
+    <div class="container">
+        <div class="row">
+            <div class="col">
+                <div class="line">
+                </div>
+            </div>
+        </div>
+    </div>
 
     {{ include('course/_delete_form.html.twig') }}
+
+    <footer>
+        {% block footer %}
+            {{ parent() }}
+        {% endblock %}
+    </footer>
 {% endblock %}

@@ -23,3 +23,12 @@ fixtload:
 
 exec-php:
 	@${PHP} /bin/sh
+
+fix:
+	@${PHP} vendor/bin/php-cs-fixer fix
+
+encore-dev:
+	@${COMPOSE} run node yarn encore dev --watch
+
+encore-prod:
+	@${COMPOSE} run node yarn encore production

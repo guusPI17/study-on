@@ -1,22 +1,21 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}Уроки/StudyOn{% endblock %}
-
 {% block body %}
-    <h1>Уроки</h1>
+    <h1 class="center-h1">Уроки</h1>
 
-    <table class="table">
-        <tbody>
-        {% for lesson in lessons %}
-            <tr>
-                <td>{{ lesson.number }} .</td>
-                <td> <a href="{{ path('lesson_show', {'id': lesson.id}) }}">{{ lesson.name }}</a></td>
-            </tr>
-        {% else %}
-            <tr>
-                <td colspan="5">Уроки не найдены</td>
-            </tr>
-        {% endfor %}
-        </tbody>
-    </table>
+    <div class="container">
+        <div class="row">
+            <div class="col"></div>
+            <div class="col-8">
+                <ol>
+                    {% for lesson in lessons %}
+                        <li><a href="{{ path('lesson_show', {'id': lesson.id}) }}">{{ lesson.name }}</a></li>
+                    {% else %}
+                        Уроки не найдены
+                    {% endfor %}
+                </ol>
+            </div>
+            <div class="col"></div>
+        </div>
+    </div>
 {% endblock %}

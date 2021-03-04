@@ -3,10 +3,10 @@
 namespace App\Entity;
 
 use App\Repository\CourseRepository;
-use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 
 /**
  * @ORM\Entity(repositoryClass=CourseRepository::class)
@@ -14,7 +14,6 @@ use Doctrine\ORM\Mapping as ORM;
  */
 class Course
 {
-
     /**
      * @ORM\Id
      * @ORM\GeneratedValue
@@ -38,22 +37,19 @@ class Course
     private $description;
 
     /**
-     * @ORM\OneToMany(targetEntity=Lesson::class, mappedBy="course")
+     * @ORM\OneToMany(targetEntity=Lesson::class, mappedBy="course", cascade={"remove"})
      */
     private $lessons;
-
 
     public function __construct()
     {
         $this->lessons = new ArrayCollection();
     }
 
-
     public function getId(): ?int
     {
         return $this->id;
     }
-
 
     public function getCode(): ?string
     {
@@ -67,12 +63,10 @@ class Course
         return $this;
     }
 
-
     public function getName(): ?string
     {
         return $this->name;
     }
-
 
     public function setName(string $name): self
     {
@@ -81,12 +75,10 @@ class Course
         return $this;
     }
 
-
     public function getDescription(): ?string
     {
         return $this->description;
     }
-
 
     public function setDescription(?string $description): self
     {
@@ -95,7 +87,6 @@ class Course
         return $this;
     }
 
-
     /**
      * @return Collection|Lesson[]
      */
@@ -103,7 +94,6 @@ class Course
     {
         return $this->lessons;
     }
-
 
     public function addLesson(Lesson $lesson): self
     {
@@ -114,7 +104,6 @@ class Course
 
         return $this;
     }
-
 
     public function removeLesson(Lesson $lesson): self
     {
@@ -127,6 +116,4 @@ class Course
 
         return $this;
     }
-
-
 }

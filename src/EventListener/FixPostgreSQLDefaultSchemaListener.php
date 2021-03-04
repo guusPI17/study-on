@@ -9,8 +9,6 @@ use Doctrine\ORM\Tools\Event\GenerateSchemaEventArgs;
 
 final class FixPostgreSQLDefaultSchemaListener
 {
-
-
     public function postGenerateSchema(GenerateSchemaEventArgs $args): void
     {
         $schemaManager = $args
@@ -18,16 +16,14 @@ final class FixPostgreSQLDefaultSchemaListener
             ->getConnection()
             ->getSchemaManager();
 
-        if ($schemaManager instanceof PostgreSqlSchemaManager === false) {
+        if (false === $schemaManager instanceof PostgreSqlSchemaManager) {
             return;
         }
 
         foreach ($schemaManager->getExistingSchemaSearchPaths() as $namespace) {
-            if ($args->getSchema()->hasNamespace($namespace) === false) {
+            if (false === $args->getSchema()->hasNamespace($namespace)) {
                 $args->getSchema()->createNamespace($namespace);
             }
         }
     }
-
-
 }
