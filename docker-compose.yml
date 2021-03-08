@@ -20,8 +20,8 @@ services:
     environment:
       POSTGRES_USER: pguser
       POSTGRES_PASSWORD: pguser
-    ports:
-      - '5432:5432'
+    #ports:
+    # - '5432:5432'
   php:
     build: docker/images/php
     working_dir: /app

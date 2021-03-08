@@ -20,15 +20,21 @@ class LessonController extends AbstractController
      */
     public function new(Request $request): Response
     {
+        $courseId = $request->get('course_id');
+        $course = $this->getDoctrine()->getRepository(Course::class)->find($courseId);
+        if (!$course) {
+            throw $this->createNotFoundException('Курс с id ' . $courseId . ' не найден');
+        }
+
         $lesson = new Lesson();
         $form = $this->createForm(
             LessonType::class,
             $lesson,
-            ['course_id' => $request->query->get('course_id')]
+            ['course_id' => $courseId]
         );
         $form->handleRequest($request);
 
-        if ($form->isSubmitted() && true === $form->isValid()) {
+        if ($form->isSubmitted() && $form->isValid()) {
             $entityManager = $this->getDoctrine()->getManager();
             $entityManager->persist($lesson);
             $entityManager->flush();
@@ -42,13 +48,11 @@ class LessonController extends AbstractController
                 ]
             );
         }
-
-        //var_dump($request->query->get('course_id'));
         return $this->render(
             'lesson/new.html.twig',
             [
                 'lesson' => $lesson,
-                'form'   => $form->createView(),
+                'form' => $form->createView(),
                 'course' => $this->getDoctrine()
                     ->getRepository(Course::class)
                     ->find($request->query->get('course_id')),
@@ -75,16 +79,15 @@ class LessonController extends AbstractController
         $form = $this->createForm(
             LessonType::class,
             $lesson,
-            ['course_id' => (string) $lesson->getCourse()->getId()]
+            ['course_id' => (string)$lesson->getCourse()->getId()]
         );
         $form->handleRequest($request);
 
-        if (true === $form->isSubmitted() && true === $form->isValid()) {
+        if ($form->isSubmitted() && $form->isValid()) {
             $this->getDoctrine()->getManager()->flush();
 
             return $this->redirectToRoute('lesson_show', ['id' => $lesson->getId()]);
         }
-
         return $this->render(
             'lesson/edit.html.twig',
             [

@@ -5,8 +5,7 @@
 
     <div class="container">
         <div class="row">
-            <div class="col"></div>
-            <div class="col-8">
+            <div class="col">
                 <ol>
                     {% for lesson in lessons %}
                         <li><a href="{{ path('lesson_show', {'id': lesson.id}) }}">{{ lesson.name }}</a></li>
@@ -15,7 +14,6 @@
                     {% endfor %}
                 </ol>
             </div>
-            <div class="col"></div>
         </div>
     </div>
 {% endblock %}

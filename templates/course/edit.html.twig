@@ -18,11 +18,12 @@
             <div class="col">
                 <div class="line">
                 </div>
+                <a href="{{ path('course_show', {'id': course.id}) }}" class="btn btn-light" role="button">К курсу</a>
             </div>
         </div>
     </div>
 
-    {{ include('course/_delete_form.html.twig') }}
+
 
     <footer>
         {% block footer %}

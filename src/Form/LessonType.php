@@ -30,13 +30,13 @@ class LessonType extends AbstractType
                 'name',
                 TextType::class,
                 [
+                    'empty_data' => '',
+                    'required' => false,
                     'constraints' => [
                         new NotBlank(['message' => 'Заполните название']),
                         new Length(
                             [
-                                'min' => 1,
                                 'max' => 255,
-                                'minMessage' => 'Длина должна быть не менее  {{ limit }} символов',
                                 'maxMessage' => 'Длина должна быть не более  {{ limit }} символов',
                             ]
                         ),
@@ -47,23 +47,18 @@ class LessonType extends AbstractType
                 'content',
                 TextareaType::class,
                 [
-                    'constraints' => [
-                        new NotBlank(['message' => 'Заполните содержимое урока']),
-                        new Length(
-                            [
-                                'min' => 1,
-                                'minMessage' => 'Длина должна быть не менее  {{ limit }} символов',
-                            ]
-                        ),
-                    ],
+                    'required' => false,
+                    'constraints' => [new NotBlank(['message' => 'Заполните содержимое урока'])],
                 ]
             )
             ->add(
                 'number',
                 NumberType::class,
                 [
+                    'empty_data' => '',
+                    'required' => false,
                     'constraints' => [
-                        new NotBlank(['message' => 'Заполните порядок урока']),
+                        new NotBlank(['message' => 'Заполните номер урока']),
                     ],
                 ]
             )

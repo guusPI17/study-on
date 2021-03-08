@@ -13,17 +13,17 @@
 
     <div class="container">
         <div class="row">
-            <div class="col"></div>
-            <div class="col-8 text-center">
+            <div class="col text-center">
                 {% if course.description is not empty %}
                     <br>
-                    {{ course.description }}
+                    <div class="course-description">
+                        {{ course.description }}
+                    </div>
                     <br>
                 {% endif %}
             </div>
-            <div class="col">
-            </div>
         </div>
+    </div>
     </div>
 
     <br>
@@ -39,9 +39,11 @@
         <div class="row">
             <div class="col">
                 <a href="{{ path('course_index') }}" class="btn btn-light" role="button">К списку курсов</a>
-                <a href="{{ path('course_edit', {'id': course.id}) }}" class="btn btn-light" role="button">Редактировать курс</a>
+                <a href="{{ path('course_edit', {'id': course.id}) }}" class="btn btn-light" role="button">Редактировать
+                    курс</a>
 
-                <a href="{{ path('lesson_new', app.request.query.all|merge({ 'course_id': course.id })) }}" class="btn btn-light" role="button">Добавить урок</a>
+                <a href="{{ path('lesson_new', app.request.query.all|merge({ 'course_id': course.id })) }}"
+                   class="btn btn-light" role="button">Добавить урок</a>
 
                 {{ include('course/_delete_form.html.twig') }}
             </div>

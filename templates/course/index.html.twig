@@ -11,57 +11,41 @@
 
     <h1 class="center-h1">Курсы</h1>
 
+    <div class="container" id="courses">
     {% for course in courses %}
-        <div class="container">
-            <div class="row">
-                <div class="col"></div>
-                <div class="col-8">
-                    <div class="row border border-dark shadow p-3 mb-5 bg-white">
-                        <div class="col"></div>
-                        <div class="col-10 text-center">
-                            <h3>
-                                {{ course.name }}
-                            </h3>
-                            {% if course.description is not empty %}
-                                <div class="row">
-                                    <div class="col"></div>
-                                    <div class="col-auto">
-                                        {{ course.description }}
-                                    </div>
-                                    <div class="col"></div>
-                                </div>
-                            {% endif %}
-                            <div class="linq-button">
-                                <a href="{{ path('course_show', {'id': course.id}) }}">Пройти</a>
-                            </div>
-                        </div>
-                        <div class="col"></div>
+        <div class="row course border border-dark shadow p-3 mb-5 bg-white">
+            <div class="col text-center p-0">
+                <h3>
+                    {{ course.name }}
+                </h3>
+                {% if course.description is not empty %}
+                    <div class="course-description">
+                        {{ course.description }}
                     </div>
+                {% endif %}
+                <div class="linq-button">
+                    <a href="{{ path('course_show', {'id': course.id}) }}">Пройти</a>
                 </div>
-                <div class="col"></div>
             </div>
         </div>
     {% else %}
+        </div>
         <div class="container">
             <div class="row">
-                <div class="col"></div>
-                <div class="col-8 row border border-primary shadow p-3 mb-5 bg-white">
+                <div class="col row border border-primary shadow p-3 mb-5 bg-white">
                     <div class="col-10 text-center">
                         Курсы отсутствуют.
                     </div>
                 </div>
-                <div class="col"></div>
             </div>
         </div>
     {% endfor %}
     <div class="container">
         <div class="row">
-            <div class="col"></div>
-            <div class="col-8">
+            <div class="col">
                 <div class="line">
                 </div>
             </div>
-            <div class="col"></div>
         </div>
         <div class="row">
             <div class="col text-center">

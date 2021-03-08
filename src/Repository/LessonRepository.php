@@ -19,6 +19,17 @@ class LessonRepository extends ServiceEntityRepository
         parent::__construct($registry, Lesson::class);
     }
 
+    public function findMaxId(): int
+    {
+        $entityManager = $this->getEntityManager();
+
+        $query = $entityManager->createQuery(
+            'SELECT MAX(l.id)
+            FROM App\Entity\Lesson l'
+        );
+        return $query->getSingleScalarResult();
+    }
+
     // /**
     //  * @return Lesson[] Returns an array of Lesson objects
     //  */

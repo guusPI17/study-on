@@ -13,11 +13,9 @@
 
     <div class="container">
         <div class="row">
-            <div class="col"></div>
-            <div class="col-8">
+            <div class="col">
                 Курс <a href="{{ path('course_show', {'id': lesson.course.id}) }}">{{ lesson.course.name }}</a>
             </div>
-            <div class="col"></div>
         </div>
     </div>
 
@@ -28,10 +26,9 @@
             <div class="col">
                 <div class="line">
                 </div>
+                <a href="{{ path('lesson_show', {'id': lesson.id}) }}" class="btn btn-light" role="button">К уроку</a>
             </div>
         </div>
     </div>
 
-
-    {{ include('lesson/_delete_form.html.twig') }}
 {% endblock %}

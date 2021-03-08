@@ -20,13 +20,13 @@ class CourseType extends AbstractType
                 'code',
                 TextType::class,
                 [
+                    'empty_data' => '',
+                    'required' => false,
                     'constraints' => [
-                        new NotBlank(['message' => 'Заполните code']),
+                        new NotBlank(['message' => 'Заполните код']),
                         new Length(
                             [
-                                'min' => 1,
                                 'max' => 255,
-                                'minMessage' => 'Длина должна быть не менее  {{ limit }} символов',
                                 'maxMessage' => 'Длина должна быть не более  {{ limit }} символов',
                             ]
                         ),
@@ -37,13 +37,13 @@ class CourseType extends AbstractType
                 'name',
                 TextType::class,
                 [
+                    'empty_data' => '',
+                    'required' => false,
                     'constraints' => [
                         new NotBlank(['message' => 'Заполните название']),
                         new Length(
                             [
-                                'min' => 1,
                                 'max' => 255,
-                                'minMessage' => 'Длина должна быть не менее  {{ limit }} символов',
                                 'maxMessage' => 'Длина должна быть не более  {{ limit }} символов',
                             ]
                         ),
@@ -54,6 +54,7 @@ class CourseType extends AbstractType
                 'description',
                 TextareaType::class,
                 [
+                    'empty_data' => '',
                     'required' => false,
                     'constraints' => [
                         new Length(

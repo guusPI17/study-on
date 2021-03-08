@@ -19,6 +19,17 @@ class CourseRepository extends ServiceEntityRepository
         parent::__construct($registry, Course::class);
     }
 
+    public function findMaxId(): int
+    {
+        $entityManager = $this->getEntityManager();
+
+        $query = $entityManager->createQuery(
+            'SELECT MAX(c.id)
+            FROM App\Entity\Course c'
+        );
+        return $query->getSingleScalarResult();
+    }
+
     // /**
     //  * @return Course[] Returns an array of Course objects
     //  */

@@ -24,7 +24,7 @@ class CourseController extends AbstractController
         return $this->render(
             'course/index.html.twig',
             [
-                'courses' => $courseRepository->findAll(),
+                'courses' => $courseRepository->findBy([], ['id' => 'ASC']),
             ]
         );
     }
@@ -38,7 +38,7 @@ class CourseController extends AbstractController
         $form = $this->createForm(CourseType::class, $course);
         $form->handleRequest($request);
 
-        if (true === $form->isSubmitted() && true === $form->isValid()) {
+        if ($form->isSubmitted() && $form->isValid()) {
             $entityManager = $this->getDoctrine()->getManager();
             $entityManager->persist($course);
             $entityManager->flush();
@@ -82,7 +82,7 @@ class CourseController extends AbstractController
         $form = $this->createForm(CourseType::class, $course);
         $form->handleRequest($request);
 
-        if (true === $form->isSubmitted() && true === $form->isValid()) {
+        if ($form->isSubmitted() && $form->isValid()) {
             $this->getDoctrine()->getManager()->flush();
 
             return $this->redirectToRoute('course_show', ['id' => $course->getId()]);
@@ -102,7 +102,7 @@ class CourseController extends AbstractController
      */
     public function delete(Request $request, Course $course): Response
     {
-        if (true === $this->isCsrfTokenValid('delete'.$course->getId(), $request->request->get('_token'))) {
+        if ($this->isCsrfTokenValid('delete'.$course->getId(), $request->request->get('_token'))) {
             $entityManager = $this->getDoctrine()->getManager();
             $entityManager->remove($course);
             $entityManager->flush();

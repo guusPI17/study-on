@@ -32,3 +32,6 @@ encore-dev:
 
 encore-prod:
 	@${COMPOSE} run node yarn encore production
+
+phpunit:
+	@${PHP} bin/phpunit
