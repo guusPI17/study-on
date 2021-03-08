@@ -28,6 +28,21 @@ class LessonControllerTest extends AbstractTest
         ],
     ];
 
+    private $elementsForm = [
+        [
+            'name' => 'name',
+            'labelFor' => 'lesson_name',
+        ],
+        [
+            'name' => 'content',
+            'labelFor' => 'lesson_content',
+        ],
+        [
+            'name' => 'number',
+            'labelFor' => 'lesson_number',
+        ],
+    ];
+
     public function testPageResponseOk()
     {
         /** @var EntityManagerInterface $em */
@@ -192,31 +207,18 @@ class LessonControllerTest extends AbstractTest
         $form = $crawler->selectButton('Сохранить')->form();
         foreach ($checkData as $i => $iValue) {
             $crawler = $this->checkForm($form, $iValue);
-
-            $errorCrawler = $crawler->filter("label[for='lesson_name'] .form-error-message");
-            if ($errorCrawler->count() > 0) {
-                self::assertEquals($iValue['name']['request'], $errorCrawler->text());
-            } else {
-                self::assertEquals($iValue['name']['request'], 0);
-            }
-
-            $errorCrawler = $crawler->filter("label[for='lesson_content'] .form-error-message");
-            if ($errorCrawler->count() > 0) {
-                self::assertEquals($iValue['content']['request'], $errorCrawler->text());
-            } else {
-                self::assertEquals($iValue['content']['request'], 0);
-            }
-
-            $errorCrawler = $crawler->filter("label[for='lesson_number'] .form-error-message");
-            if ($errorCrawler->count() > 0) {
-                self::assertEquals($iValue['number']['request'], $errorCrawler->text());
-            } else {
-                self::assertEquals($iValue['number']['request'], 0);
-            }
-            if ($i + 1 != count($checkData)) {
-                self::assertNotInstanceOf(RedirectResponse::class, self::getClient()->getResponse());
-            } else {
-                $this->assertResponseRedirect();
+            foreach ($this->elementsForm as $value) {
+                $errorCrawler = $crawler->filter("label[for=$value[labelFor]] .form-error-message");
+                if ($errorCrawler->count() > 0) {
+                    self::assertEquals($iValue[$value['name']]['request'], $errorCrawler->text());
+                } else {
+                    self::assertEquals($iValue[$value['name']]['request'], 0);
+                }
+                if ($i + 1 != count($checkData)) {
+                    self::assertNotInstanceOf(RedirectResponse::class, self::getClient()->getResponse());
+                } else {
+                    $this->assertResponseRedirect();
+                }
             }
         }
 
@@ -493,31 +495,18 @@ class LessonControllerTest extends AbstractTest
         ];
         foreach ($checkData as $i => $iValue) {
             $crawler = $this->checkForm($form, $iValue);
-
-            $errorCrawler = $crawler->filter("label[for='lesson_name'] .form-error-message");
-            if ($errorCrawler->count() > 0) {
-                self::assertEquals($iValue['name']['request'], $errorCrawler->text());
-            } else {
-                self::assertEquals($iValue['name']['request'], 0);
-            }
-
-            $errorCrawler = $crawler->filter("label[for='lesson_content'] .form-error-message");
-            if ($errorCrawler->count() > 0) {
-                self::assertEquals($iValue['content']['request'], $errorCrawler->text());
-            } else {
-                self::assertEquals($iValue['content']['request'], 0);
-            }
-
-            $errorCrawler = $crawler->filter("label[for='lesson_number'] .form-error-message");
-            if ($errorCrawler->count() > 0) {
-                self::assertEquals($iValue['number']['request'], $errorCrawler->text());
-            } else {
-                self::assertEquals($iValue['number']['request'], 0);
-            }
-            if ($i + 1 != count($checkData)) {
-                self::assertNotInstanceOf(RedirectResponse::class, self::getClient()->getResponse());
-            } else {
-                $this->assertResponseRedirect();
+            foreach ($this->elementsForm as $value) {
+                $errorCrawler = $crawler->filter("label[for=$value[labelFor]] .form-error-message");
+                if ($errorCrawler->count() > 0) {
+                    self::assertEquals($iValue[$value['name']]['request'], $errorCrawler->text());
+                } else {
+                    self::assertEquals($iValue[$value['name']]['request'], 0);
+                }
+                if ($i + 1 != count($checkData)) {
+                    self::assertNotInstanceOf(RedirectResponse::class, self::getClient()->getResponse());
+                } else {
+                    $this->assertResponseRedirect();
+                }
             }
         }
 
