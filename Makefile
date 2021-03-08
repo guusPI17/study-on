@@ -25,7 +25,7 @@ exec-php:
 	@${PHP} /bin/sh
 
 fix:
-	@${PHP} vendor/bin/php-cs-fixer fix
+	@${PHP} vendor/bin/php-cs-fixer fix --allow-risky=yes
 
 encore-dev:
 	@${COMPOSE} run node yarn encore dev --watch

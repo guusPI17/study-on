@@ -13,7 +13,7 @@ class CourseControllerTest extends AbstractTest
 {
     private $urlBase = '/courses';
 
-    private $errors = [
+    private $errorsForm = [
         'code' => [
             'uniqueFalse' => 'Данный код уже занят',
             'longLength' => 'Длина должна быть не более 255 символов',
@@ -47,18 +47,20 @@ class CourseControllerTest extends AbstractTest
         $em = self::getEntityManager();
         $courses = $em->getRepository(Course::class)->findAll();
 
-        self::getClient()->request('GET', $this->urlBase.'/');
+        self::getClient()->request('GET', $this->urlBase . '/');
         $this->assertResponseOk();
 
-        self::getClient()->request('GET', $this->urlBase.'/new');
+        self::getClient()->request('GET', $this->urlBase . '/new');
         $this->assertResponseOk();
+        $gg = 'gfg' . 'hhh';
+        $gf = 4 + 3;
 
         foreach ($courses as $course) {
-            /** @var Course $course */
-            self::getClient()->request('GET', $this->urlBase.'/'.$course->getId());
+            /* @var Course $course */
+            self::getClient()->request('GET', $this->urlBase . '/' . $course->getId());
             $this->assertResponseOk();
 
-            self::getClient()->request('GET', $this->urlBase.'/'.$course->getId().'/edit');
+            self::getClient()->request('GET', $this->urlBase . '/' . $course->getId() . '/edit');
             $this->assertResponseOk();
         }
     }
@@ -70,18 +72,18 @@ class CourseControllerTest extends AbstractTest
         $maxId = $em->getRepository(Course::class)->findMaxId();
 
         // проверка по переходу к несуществующему курсу
-        self::getClient()->request('GET', $this->urlBase.'/'.($maxId + 1));
+        self::getClient()->request('GET', $this->urlBase . '/' . ($maxId + 1));
         $this->assertResponseNotFound();
 
         // проверка по переходу к несуществующему редактору курсу
-        self::getClient()->request('GET', $this->urlBase.'/'.($maxId + 1).'/edit');
+        self::getClient()->request('GET', $this->urlBase . '/' . ($maxId + 1) . '/edit');
         $this->assertResponseNotFound();
     }
 
     public function testCourseEdit(): void
     {
         // проверка перехода на страницу курсов (/courses)
-        $crawler = self::getClient()->request('GET', $this->urlBase.'/');
+        $crawler = self::getClient()->request('GET', $this->urlBase . '/');
         $this->assertResponseOk();
 
         // получение объекта Course к которому планируем перейти
@@ -100,7 +102,7 @@ class CourseControllerTest extends AbstractTest
         foreach ($crawlers as $node) {
             $hrefLink = $node->selectLink('Пройти')->attr('href');
             $id = explode('/', $hrefLink)[2];
-            if ($course->getId() === (int)$id) {
+            if ($course->getId() === (int) $id) {
                 $crawler = $node;
             }
         }
@@ -109,7 +111,7 @@ class CourseControllerTest extends AbstractTest
         $linkCourse = $crawler->selectLink('Пройти')->link();
         $crawler = self::getClient()->click($linkCourse);
         self::assertEquals(
-            $this->urlBase.'/'.$course->getId(),
+            $this->urlBase . '/' . $course->getId(),
             self::getClient()->getRequest()->getPathInfo()
         );
         $this->assertResponseOk();
@@ -118,7 +120,7 @@ class CourseControllerTest extends AbstractTest
         $linkEditCourse = $crawler->selectLink('Редактировать курс')->link();
         $crawler = self::getClient()->click($linkEditCourse);
         self::assertEquals(
-            $this->urlBase.'/'.$course->getId().'/edit',
+            $this->urlBase . '/' . $course->getId() . '/edit',
             self::getClient()->getRequest()->getPathInfo()
         );
         $this->assertResponseOk();
@@ -133,69 +135,57 @@ class CourseControllerTest extends AbstractTest
         // последний элемент массива с верными данными
         $checkData = [
             [
-                'code' =>
-                    [
+                'code' => [
                         'text' => '',
-                        'request' => $this->errors['code']['empty'],
+                        'request' => $this->errorsForm['code']['empty'],
                     ],
-                'name' =>
-                    [
+                'name' => [
                         'text' => '',
-                        'request' => $this->errors['name']['empty'],
+                        'request' => $this->errorsForm['name']['empty'],
                     ],
-                'description' =>
-                    [
+                'description' => [
                         'text' => str_repeat('1', 1001),
-                        'request' => $this->errors['description']['longLength'],
+                        'request' => $this->errorsForm['description']['longLength'],
                     ],
             ],
             [
-                'code' =>
-                    [
+                'code' => [
                         'text' => 'C202103011957AG',
-                        'request' => $this->errors['code']['uniqueFalse'],
+                        'request' => $this->errorsForm['code']['uniqueFalse'],
                     ],
-                'name' =>
-                    [
+                'name' => [
                         'text' => str_repeat('1', 256),
-                        'request' => $this->errors['name']['longLength'],
+                        'request' => $this->errorsForm['name']['longLength'],
                     ],
-                'description' =>
-                    [
+                'description' => [
                         'text' => 'TestDescriptionCourse',
                         'request' => 0,
                     ],
             ],
             [
-                'code' =>
-                    [
+                'code' => [
                         'text' => str_repeat('1', 256),
-                        'request' => $this->errors['code']['longLength'],
+                        'request' => $this->errorsForm['code']['longLength'],
                     ],
-                'name' =>
-                    [
+                'name' => [
                         'text' => 'TestNameCourse',
                         'request' => 0,
                     ],
-                'description' =>
-                    [
+                'description' => [
                         'text' => 'TestDescriptionCourse',
                         'request' => 0,
                     ],
             ],
             [
-                'code' =>
-                    [
+                'code' => [
                         'text' => 'TestCodeCourse',
                         'request' => 0,
                     ],
-                'name' =>
-                    [
+                'name' => [
                         'text' => 'TestNameCourse',
                         'request' => 0,
                     ],
-                'description' =>
-                    [
+                'description' => [
                         'text' => 'TestDescriptionCourse',
                         'request' => 0,
                     ],
@@ -221,7 +211,7 @@ class CourseControllerTest extends AbstractTest
         // редирект на /courses/{id}
         $crawler = self::getClient()->followRedirect();
         self::assertEquals(
-            $this->urlBase.'/'.$course->getId(),
+            $this->urlBase . '/' . $course->getId(),
             self::getClient()->getRequest()->getPathInfo()
         );
         $this->assertResponseOk();
@@ -250,14 +240,14 @@ class CourseControllerTest extends AbstractTest
     public function testCourseShow(): void
     {
         // проверка перехода на страницу курсов (/courses)
-        $crawler = self::getClient()->request('GET', $this->urlBase.'/');
+        $crawler = self::getClient()->request('GET', $this->urlBase . '/');
         $this->assertResponseOk();
 
         // получение количества курсов
         $countCourses = $crawler->filter('.course')->count();
 
         // проверка что можем просмотреть любой из курсов
-        for ($i = 0; $i < $countCourses; $i++) {
+        for ($i = 0; $i < $countCourses; ++$i) {
             $crawler = $crawler->filter('.course')->eq($i);
             $nameCourse = $crawler->filter('h3')->text();
             $descriptionCourse = $crawler->filter('.course-description')->text();
@@ -283,11 +273,10 @@ class CourseControllerTest extends AbstractTest
 
             // проверка что перешли на верный курс (/courses/{id})
             self::assertEquals(
-                $this->urlBase.'/'.$course->getId(),
+                $this->urlBase . '/' . $course->getId(),
                 self::getClient()->getRequest()->getPathInfo()
             );
             $this->assertResponseOk();
-            ;
 
             // проверка на совпадение имени курса
             self::assertEquals($nameCourse, $crawler->filter('h1')->text());
@@ -310,7 +299,7 @@ class CourseControllerTest extends AbstractTest
             // проверка что правильно перешли обратно ко всем курсам (/courses)
             $linkCourses = $crawler->selectLink('К списку курсов')->link();
             $crawler = self::getClient()->click($linkCourses);
-            self::assertEquals($this->urlBase.'/', self::getClient()->getRequest()->getPathInfo());
+            self::assertEquals($this->urlBase . '/', self::getClient()->getRequest()->getPathInfo());
             $this->assertResponseOk();
         }
     }
@@ -318,14 +307,14 @@ class CourseControllerTest extends AbstractTest
     public function testCourseDelete(): void
     {
         // проверка перехода на страницу курсов (/courses)
-        $crawler = self::getClient()->request('GET', $this->urlBase.'/');
+        $crawler = self::getClient()->request('GET', $this->urlBase . '/');
         $this->assertResponseOk();
 
         // получение количества курсов
         $countCourses = $crawler->filter('.course')->count();
 
         // проверка что можем удалить любой из курсов
-        for ($i = 0; $i < $countCourses; $i++) {
+        for ($i = 0; $i < $countCourses; ++$i) {
             $crawler = $crawler->filter('.course')->eq(0);
             $hrefLink = $crawler->selectLink('Пройти')->attr('href');
             $idCourse = explode('/', $hrefLink)[2];
@@ -346,7 +335,7 @@ class CourseControllerTest extends AbstractTest
 
             // проверка что перешли на верный курс (/courses/{id})
             self::assertEquals(
-                $this->urlBase.'/'.$course->getId(),
+                $this->urlBase . '/' . $course->getId(),
                 self::getClient()->getRequest()->getPathInfo()
             );
             $this->assertResponseOk();
@@ -360,7 +349,7 @@ class CourseControllerTest extends AbstractTest
 
             // проверка что правильно перешли на /courses
             $this->assertResponseOk();
-            self::assertEquals($this->urlBase.'/', self::getClient()->getRequest()->getPathInfo());
+            self::assertEquals($this->urlBase . '/', self::getClient()->getRequest()->getPathInfo());
 
             // проверка что курс удалился на html странице и не отображается
             $newCountCourses = $crawler->filter('.course')->count();
@@ -384,7 +373,7 @@ class CourseControllerTest extends AbstractTest
     public function testCourseNew(): void
     {
         // проверка перехода на страницу курсов (/courses)
-        $crawler = self::getClient()->request('GET', $this->urlBase.'/');
+        $crawler = self::getClient()->request('GET', $this->urlBase . '/');
         $this->assertResponseOk();
 
         // получение количества курсов
@@ -393,76 +382,64 @@ class CourseControllerTest extends AbstractTest
         // проверка перехода на страницу создания нового курса(/courses/new)
         $linkNewCourse = $crawler->selectLink('Новый курс')->link();
         $crawler = self::getClient()->click($linkNewCourse);
-        self::assertEquals($this->urlBase.'/new', self::getClient()->getRequest()->getPathInfo());
+        self::assertEquals($this->urlBase . '/new', self::getClient()->getRequest()->getPathInfo());
         $this->assertResponseOk();
 
         // проверка формы на валидность данные
         // последний элемент массива с верными данными
         $checkData = [
             [
-                'code' =>
-                    [
+                'code' => [
                         'text' => '',
-                        'request' => $this->errors['code']['empty'],
+                        'request' => $this->errorsForm['code']['empty'],
                     ],
-                'name' =>
-                    [
+                'name' => [
                         'text' => '',
-                        'request' => $this->errors['name']['empty'],
+                        'request' => $this->errorsForm['name']['empty'],
                     ],
-                'description' =>
-                    [
+                'description' => [
                         'text' => str_repeat('1', 1001),
-                        'request' => $this->errors['description']['longLength'],
+                        'request' => $this->errorsForm['description']['longLength'],
                     ],
             ],
             [
-                'code' =>
-                    [
+                'code' => [
                         'text' => 'C202103011957AG',
-                        'request' => $this->errors['code']['uniqueFalse'],
+                        'request' => $this->errorsForm['code']['uniqueFalse'],
                     ],
-                'name' =>
-                    [
+                'name' => [
                         'text' => str_repeat('1', 256),
-                        'request' => $this->errors['name']['longLength'],
+                        'request' => $this->errorsForm['name']['longLength'],
                     ],
-                'description' =>
-                    [
+                'description' => [
                         'text' => 'TestDescriptionCourse',
                         'request' => 0,
                     ],
             ],
             [
-                'code' =>
-                    [
+                'code' => [
                         'text' => str_repeat('1', 256),
-                        'request' => $this->errors['code']['longLength'],
+                        'request' => $this->errorsForm['code']['longLength'],
                     ],
-                'name' =>
-                    [
+                'name' => [
                         'text' => 'TestNameCourse',
                         'request' => 0,
                     ],
-                'description' =>
-                    [
+                'description' => [
                         'text' => 'TestDescriptionCourse',
                         'request' => 0,
                     ],
             ],
             [
-                'code' =>
-                    [
+                'code' => [
                         'text' => 'TestCodeCourse',
                         'request' => 0,
                     ],
-                'name' =>
-                    [
+                'name' => [
                         'text' => 'TestNameCourse',
                         'request' => 0,
                     ],
-                'description' =>
-                    [
+                'description' => [
                         'text' => 'TestDescriptionCourse',
                         'request' => 0,
                     ],
@@ -488,7 +465,7 @@ class CourseControllerTest extends AbstractTest
 
         // редирект на /courses
         $crawler = self::getClient()->followRedirect();
-        self::assertEquals($this->urlBase.'/', self::getClient()->getRequest()->getPathInfo());
+        self::assertEquals($this->urlBase . '/', self::getClient()->getRequest()->getPathInfo());
         self::assertEquals(200, self::getClient()->getResponse()->getStatusCode());
 
         // проверка что новый курс создался на html странице и отображается
@@ -519,6 +496,7 @@ class CourseControllerTest extends AbstractTest
         $form['course[code]'] = $data['code']['text'];
         $form['course[name]'] = $data['name']['text'];
         $form['course[description]'] = $data['description']['text'];
+
         return self::getClient()->submit($form);
     }
 

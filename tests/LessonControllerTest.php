@@ -15,7 +15,7 @@ class LessonControllerTest extends AbstractTest
     private $urlLessons = '/lessons';
     private $urlCourses = '/courses';
 
-    private $errors = [
+    private $errorsForm = [
         'name' => [
             'longLength' => 'Длина должна быть не более 255 символов',
             'empty' => 'Заполните название',
@@ -51,18 +51,18 @@ class LessonControllerTest extends AbstractTest
         $courses = $em->getRepository(Course::class)->findAll();
 
         foreach ($courses as $course) {
-            /** @var Course $course */
-            self::getClient()->request('GET', $this->urlLessons.'/new?course_id='.$course->getId());
+            /* @var Course $course */
+            self::getClient()->request('GET', $this->urlLessons . '/new?course_id=' . $course->getId());
             $this->assertResponseOk();
         }
 
         $lessons = $em->getRepository(Lesson::class)->findAll();
         foreach ($lessons as $lesson) {
-            /** @var Lesson $lesson */
-            self::getClient()->request('GET', $this->urlLessons.'/'.$lesson->getId());
+            /* @var Lesson $lesson */
+            self::getClient()->request('GET', $this->urlLessons . '/' . $lesson->getId());
             $this->assertResponseOk();
 
-            self::getClient()->request('GET', $this->urlLessons.'/'.$lesson->getId().'/edit');
+            self::getClient()->request('GET', $this->urlLessons . '/' . $lesson->getId() . '/edit');
             $this->assertResponseOk();
         }
     }
@@ -75,22 +75,22 @@ class LessonControllerTest extends AbstractTest
         $maxIdCourse = $em->getRepository(Course::class)->findMaxId();
 
         // проверка по созданию урока у несуществующего курса
-        self::getClient()->request('GET', $this->urlLessons.'/new?course_id='.($maxIdCourse + 1));
+        self::getClient()->request('GET', $this->urlLessons . '/new?course_id=' . ($maxIdCourse + 1));
         $this->assertResponseNotFound();
 
         // проверка по переходу к несуществующему уроку
-        self::getClient()->request('GET', $this->urlLessons.'/'.($maxIdLesson + 1));
+        self::getClient()->request('GET', $this->urlLessons . '/' . ($maxIdLesson + 1));
         $this->assertResponseNotFound();
 
         // проверка по переходу к несуществующему редактору урока
-        self::getClient()->request('GET', $this->urlLessons.'/'.($maxIdLesson + 1).'/edit');
+        self::getClient()->request('GET', $this->urlLessons . '/' . ($maxIdLesson + 1) . '/edit');
         $this->assertResponseNotFound();
     }
 
     public function testLessonNew(): void
     {
         // проверка перехода на страницу курсов
-        $crawler = self::getClient()->request('GET', $this->urlCourses.'/');
+        $crawler = self::getClient()->request('GET', $this->urlCourses . '/');
         $this->assertResponseOk();
 
         // получение объекта Course к которому планируем перейти
@@ -109,7 +109,7 @@ class LessonControllerTest extends AbstractTest
         foreach ($crawlers as $node) {
             $hrefLink = $node->selectLink('Пройти')->attr('href');
             $id = explode('/', $hrefLink)[2];
-            if ($course->getId() === (int)$id) {
+            if ($course->getId() === (int) $id) {
                 $crawler = $node;
             }
         }
@@ -118,7 +118,7 @@ class LessonControllerTest extends AbstractTest
         $linkCourse = $crawler->selectLink('Пройти')->link();
         $crawler = self::getClient()->click($linkCourse);
         self::assertEquals(
-            $this->urlCourses.'/'.$course->getId(),
+            $this->urlCourses . '/' . $course->getId(),
             self::getClient()->getRequest()->getPathInfo()
         );
         $this->assertResponseOk();
@@ -127,7 +127,7 @@ class LessonControllerTest extends AbstractTest
         $linkNewLesson = $crawler->selectLink('Добавить урок')->link();
         $crawler = self::getClient()->click($linkNewLesson);
         self::assertEquals(
-            $this->urlLessons.'/new?course_id='.$course->getId(),
+            $this->urlLessons . '/new?course_id=' . $course->getId(),
             self::getClient()->getRequest()->getRequestUri()
         );
         $this->assertResponseOk();
@@ -136,69 +136,57 @@ class LessonControllerTest extends AbstractTest
         // последний элемент массива с верными данными
         $checkData = [
             [
-                'name' =>
-                    [
+                'name' => [
                         'text' => '',
-                        'request' => $this->errors['name']['empty'],
+                        'request' => $this->errorsForm['name']['empty'],
                     ],
-                'content' =>
-                    [
+                'content' => [
                         'text' => '',
-                        'request' => $this->errors['content']['empty'],
+                        'request' => $this->errorsForm['content']['empty'],
                     ],
-                'number' =>
-                    [
+                'number' => [
                         'text' => '',
-                        'request' => $this->errors['number']['empty'],
+                        'request' => $this->errorsForm['number']['empty'],
                     ],
             ],
             [
-                'name' =>
-                    [
+                'name' => [
                         'text' => str_repeat('1', 256),
-                        'request' => $this->errors['name']['longLength'],
+                        'request' => $this->errorsForm['name']['longLength'],
                     ],
-                'content' =>
-                    [
+                'content' => [
                         'text' => 'TestContentLesson',
                         'request' => 0,
                     ],
-                'number' =>
-                    [
+                'number' => [
                         'text' => '10001',
-                        'request' => $this->errors['number']['longLength'],
+                        'request' => $this->errorsForm['number']['longLength'],
                     ],
             ],
             [
-                'name' =>
-                    [
+                'name' => [
                         'text' => 'TestNameLesson',
                         'request' => 0,
                     ],
-                'content' =>
-                    [
+                'content' => [
                         'text' => 'TestContentLesson',
                         'request' => 0,
                     ],
-                'number' =>
-                    [
+                'number' => [
                         'text' => '13g5',
-                        'request' => $this->errors['number']['errorType'],
+                        'request' => $this->errorsForm['number']['errorType'],
                     ],
             ],
             [
-                'name' =>
-                    [
+                'name' => [
                         'text' => 'TestNameLesson',
                         'request' => 0,
                     ],
-                'content' =>
-                    [
+                'content' => [
                         'text' => 'TestContentLesson',
                         'request' => 0,
                     ],
-                'number' =>
-                    [
+                'number' => [
                         'text' => '10',
                         'request' => 0,
                     ],
@@ -225,7 +213,7 @@ class LessonControllerTest extends AbstractTest
         // редирект на /courses/{id}
         $crawler = self::getClient()->followRedirect();
         self::assertEquals(
-            $this->urlCourses.'/'.$course->getId(),
+            $this->urlCourses . '/' . $course->getId(),
             self::getClient()->getRequest()->getPathInfo()
         );
         $this->assertResponseOk();
@@ -238,7 +226,7 @@ class LessonControllerTest extends AbstractTest
                 'name' => 'TestNameLesson',
                 'content' => 'TestContentLesson',
                 'number' => 10,
-                'course' => $course
+                'course' => $course,
             ]
         );
         self::assertNotNull($lesson);
@@ -256,7 +244,7 @@ class LessonControllerTest extends AbstractTest
             ['course' => $course],
             ['number' => 'ASC']
         );
-        for ($j = 0; $j < $countLessonsDB; $j++) {
+        for ($j = 0; $j < $countLessonsDB; ++$j) {
             self::assertEquals(
                 $lessons[$j]->getName(),
                 $crawler->filter('li')->eq($j)->text()
@@ -267,14 +255,14 @@ class LessonControllerTest extends AbstractTest
     public function testLessonShow(): void
     {
         // проверка перехода на страницу курсов (/courses)
-        $crawler = self::getClient()->request('GET', $this->urlCourses.'/');
+        $crawler = self::getClient()->request('GET', $this->urlCourses . '/');
         $this->assertResponseOk();
 
         // получение количества курсов
         $countCourses = $crawler->filter('.course')->count();
 
         // проверка что можем просмотреть любой урок на любом курсе
-        for ($i = 0; $i < $countCourses; $i++) {
+        for ($i = 0; $i < $countCourses; ++$i) {
             $crawler = $crawler->filter('.course')->eq($i);
             $nameCourse = $crawler->filter('h3')->text();
             $hrefLink = $crawler->selectLink('Пройти')->attr('href');
@@ -295,15 +283,14 @@ class LessonControllerTest extends AbstractTest
 
             // проверка что перешли на верный курс (/courses/{id})
             self::assertEquals(
-                $this->urlCourses.'/'.$course->getId(),
+                $this->urlCourses . '/' . $course->getId(),
                 self::getClient()->getRequest()->getPathInfo()
             );
             $this->assertResponseOk();
-            ;
 
             // проверка всех уроков
             $countLesson = $crawler->filter('li')->count();
-            for ($j = 0; $j < $countLesson; $j++) {
+            for ($j = 0; $j < $countLesson; ++$j) {
                 $nameLesson = $crawler->filter('li')->eq($j)->text();
                 $hrefLink = $crawler->selectLink($nameLesson)->attr('href');
                 $idLesson = explode('/', $hrefLink)[2];
@@ -323,7 +310,7 @@ class LessonControllerTest extends AbstractTest
                 // переход к уроку
                 $crawler = self::getClient()->click($linkLesson);
                 self::assertEquals(
-                    $this->urlLessons.'/' . $lesson->getId(),
+                    $this->urlLessons . '/' . $lesson->getId(),
                     self::getClient()->getRequest()->getPathInfo()
                 );
                 $this->assertResponseOk();
@@ -341,7 +328,7 @@ class LessonControllerTest extends AbstractTest
                 $linkCourse = $crawler->selectLink($nameCourse)->link();
                 $crawler = self::getClient()->click($linkCourse);
                 self::assertEquals(
-                    $this->urlCourses.'/' . $course->getId(),
+                    $this->urlCourses . '/' . $course->getId(),
                     self::getClient()->getRequest()->getPathInfo()
                 );
                 $this->assertResponseOk();
@@ -349,7 +336,7 @@ class LessonControllerTest extends AbstractTest
             // проверка что правильно перешли обратно ко всем курсам (/courses)
             $linkCourses = $crawler->selectLink('К списку курсов')->link();
             $crawler = self::getClient()->click($linkCourses);
-            self::assertEquals($this->urlCourses.'/', self::getClient()->getRequest()->getPathInfo());
+            self::assertEquals($this->urlCourses . '/', self::getClient()->getRequest()->getPathInfo());
             $this->assertResponseOk();
         }
     }
@@ -357,7 +344,7 @@ class LessonControllerTest extends AbstractTest
     public function testLessonEdit(): void
     {
         // проверка перехода на страницу курсов
-        $crawler = self::getClient()->request('GET', $this->urlCourses.'/');
+        $crawler = self::getClient()->request('GET', $this->urlCourses . '/');
         $this->assertResponseOk();
 
         // получение объекта Course к которому планируем перейти
@@ -376,7 +363,7 @@ class LessonControllerTest extends AbstractTest
         foreach ($crawlers as $node) {
             $hrefLink = $node->selectLink('Пройти')->attr('href');
             $id = explode('/', $hrefLink)[2];
-            if ($course->getId() === (int)$id) {
+            if ($course->getId() === (int) $id) {
                 $crawler = $node;
             }
         }
@@ -385,7 +372,7 @@ class LessonControllerTest extends AbstractTest
         $linkCourse = $crawler->selectLink('Пройти')->link();
         $crawler = self::getClient()->click($linkCourse);
         self::assertEquals(
-            $this->urlCourses.'/'.$course->getId(),
+            $this->urlCourses . '/' . $course->getId(),
             self::getClient()->getRequest()->getPathInfo()
         );
         $this->assertResponseOk();
@@ -400,7 +387,7 @@ class LessonControllerTest extends AbstractTest
         $linkLesson = $crawler->selectLink('Введение в статистику')->link();
         $crawler = self::getClient()->click($linkLesson);
         self::assertEquals(
-            $this->urlLessons.'/'. $lesson->getId(),
+            $this->urlLessons . '/' . $lesson->getId(),
             self::getClient()->getRequest()->getRequestUri()
         );
         $this->assertResponseOk();
@@ -409,7 +396,7 @@ class LessonControllerTest extends AbstractTest
         $linkLesson = $crawler->selectLink('Редактировать')->link();
         $crawler = self::getClient()->click($linkLesson);
         self::assertEquals(
-            $this->urlLessons.'/'. $lesson->getId() . '/edit',
+            $this->urlLessons . '/' . $lesson->getId() . '/edit',
             self::getClient()->getRequest()->getRequestUri()
         );
         $this->assertResponseOk();
@@ -425,69 +412,57 @@ class LessonControllerTest extends AbstractTest
         // последний элемент массива с верными данными
         $checkData = [
             [
-                'name' =>
-                    [
+                'name' => [
                         'text' => '',
-                        'request' => $this->errors['name']['empty'],
+                        'request' => $this->errorsForm['name']['empty'],
                     ],
-                'content' =>
-                    [
+                'content' => [
                         'text' => '',
-                        'request' => $this->errors['content']['empty'],
+                        'request' => $this->errorsForm['content']['empty'],
                     ],
-                'number' =>
-                    [
+                'number' => [
                         'text' => '',
-                        'request' => $this->errors['number']['empty'],
+                        'request' => $this->errorsForm['number']['empty'],
                     ],
             ],
             [
-                'name' =>
-                    [
+                'name' => [
                         'text' => str_repeat('1', 256),
-                        'request' => $this->errors['name']['longLength'],
+                        'request' => $this->errorsForm['name']['longLength'],
                     ],
-                'content' =>
-                    [
+                'content' => [
                         'text' => 'TestContentLesson',
                         'request' => 0,
                     ],
-                'number' =>
-                    [
+                'number' => [
                         'text' => '10001',
-                        'request' => $this->errors['number']['longLength'],
+                        'request' => $this->errorsForm['number']['longLength'],
                     ],
             ],
             [
-                'name' =>
-                    [
+                'name' => [
                         'text' => 'TestNameLesson',
                         'request' => 0,
                     ],
-                'content' =>
-                    [
+                'content' => [
                         'text' => 'TestContentLesson',
                         'request' => 0,
                     ],
-                'number' =>
-                    [
+                'number' => [
                         'text' => '13g5',
-                        'request' => $this->errors['number']['errorType'],
+                        'request' => $this->errorsForm['number']['errorType'],
                     ],
             ],
             [
-                'name' =>
-                    [
+                'name' => [
                         'text' => 'TestNameLesson',
                         'request' => 0,
                     ],
-                'content' =>
-                    [
+                'content' => [
                         'text' => 'TestContentLesson',
                         'request' => 0,
                     ],
-                'number' =>
-                    [
+                'number' => [
                         'text' => '10',
                         'request' => 0,
                     ],
@@ -513,7 +488,7 @@ class LessonControllerTest extends AbstractTest
         // редирект на /lesson/{id}
         $crawler = self::getClient()->followRedirect();
         self::assertEquals(
-            $this->urlLessons.'/'.$lesson->getId(),
+            $this->urlLessons . '/' . $lesson->getId(),
             self::getClient()->getRequest()->getPathInfo()
         );
 
@@ -524,7 +499,7 @@ class LessonControllerTest extends AbstractTest
                 'name' => 'TestNameLesson',
                 'content' => 'TestContentLesson',
                 'number' => 10,
-                'course' => $course
+                'course' => $course,
             ]
         );
         self::assertNotNull($lesson);
@@ -542,14 +517,14 @@ class LessonControllerTest extends AbstractTest
         $linkCourse = $crawler->selectLink($lesson->getCourse()->getName())->link();
         $crawler = self::getClient()->click($linkCourse);
         self::assertEquals(
-            $this->urlCourses.'/' . $course->getId(),
+            $this->urlCourses . '/' . $course->getId(),
             self::getClient()->getRequest()->getPathInfo()
         );
         $this->assertResponseOk();
 
         // редирект на /courses/{id}
         self::assertEquals(
-            $this->urlCourses.'/'.$course->getId(),
+            $this->urlCourses . '/' . $course->getId(),
             self::getClient()->getRequest()->getPathInfo()
         );
         $this->assertResponseOk();
@@ -561,7 +536,7 @@ class LessonControllerTest extends AbstractTest
             ['number' => 'ASC']
         );
         $countLesson = count($course->getLessons());
-        for ($j = 0; $j < $countLesson; $j++) {
+        for ($j = 0; $j < $countLesson; ++$j) {
             self::assertEquals(
                 $lessons[$j]->getName(),
                 $crawler->filter('li')->eq($j)->text()
@@ -572,14 +547,14 @@ class LessonControllerTest extends AbstractTest
     public function testLessonDelete(): void
     {
         // проверка перехода на страницу курсов (/courses)
-        $crawler = self::getClient()->request('GET', $this->urlCourses.'/');
+        $crawler = self::getClient()->request('GET', $this->urlCourses . '/');
         $this->assertResponseOk();
 
         // получение количества курсов
         $countCourses = $crawler->filter('.course')->count();
 
         // проверка что можем просмотреть любой урок на любом курсе
-        for ($i = 0; $i < $countCourses; $i++) {
+        for ($i = 0; $i < $countCourses; ++$i) {
             $crawler = $crawler->filter('.course')->eq($i);
             $nameCourse = $crawler->filter('h3')->text();
             $hrefLink = $crawler->selectLink('Пройти')->attr('href');
@@ -600,15 +575,14 @@ class LessonControllerTest extends AbstractTest
 
             // проверка что перешли на верный курс (/courses/{id})
             self::assertEquals(
-                $this->urlCourses.'/'.$course->getId(),
+                $this->urlCourses . '/' . $course->getId(),
                 self::getClient()->getRequest()->getPathInfo()
             );
             $this->assertResponseOk();
-            ;
 
             // проверка всех уроков
             $countLesson = $crawler->filter('li')->count();
-            for ($j = 0; $j < $countLesson; $j++) {
+            for ($j = 0; $j < $countLesson; ++$j) {
                 $nameLesson = $crawler->filter('li')->eq(0)->text();
                 $hrefLink = $crawler->selectLink($nameLesson)->attr('href');
                 $idLesson = explode('/', $hrefLink)[2];
@@ -628,7 +602,7 @@ class LessonControllerTest extends AbstractTest
                 // переход к уроку
                 $crawler = self::getClient()->click($linkLesson);
                 self::assertEquals(
-                    $this->urlLessons.'/' . $lesson->getId(),
+                    $this->urlLessons . '/' . $lesson->getId(),
                     self::getClient()->getRequest()->getPathInfo()
                 );
                 $this->assertResponseOk();
@@ -668,7 +642,7 @@ class LessonControllerTest extends AbstractTest
             // проверка что правильно перешли обратно ко всем курсам (/courses)
             $linkCourses = $crawler->selectLink('К списку курсов')->link();
             $crawler = self::getClient()->click($linkCourses);
-            self::assertEquals($this->urlCourses.'/', self::getClient()->getRequest()->getPathInfo());
+            self::assertEquals($this->urlCourses . '/', self::getClient()->getRequest()->getPathInfo());
             $this->assertResponseOk();
         }
     }
@@ -678,6 +652,7 @@ class LessonControllerTest extends AbstractTest
         $form['lesson[name]'] = $data['name']['text'];
         $form['lesson[content]'] = $data['content']['text'];
         $form['lesson[number]'] = $data['number']['text'];
+
         return self::getClient()->submit($form);
     }
 

@@ -48,6 +48,7 @@ class LessonController extends AbstractController
                 ]
             );
         }
+
         return $this->render(
             'lesson/new.html.twig',
             [
@@ -79,7 +80,7 @@ class LessonController extends AbstractController
         $form = $this->createForm(
             LessonType::class,
             $lesson,
-            ['course_id' => (string)$lesson->getCourse()->getId()]
+            ['course_id' => (string) $lesson->getCourse()->getId()]
         );
         $form->handleRequest($request);
 
@@ -88,6 +89,7 @@ class LessonController extends AbstractController
 
             return $this->redirectToRoute('lesson_show', ['id' => $lesson->getId()]);
         }
+
         return $this->render(
             'lesson/edit.html.twig',
             [
@@ -102,7 +104,7 @@ class LessonController extends AbstractController
      */
     public function delete(Request $request, Lesson $lesson): Response
     {
-        if ($this->isCsrfTokenValid('delete'.$lesson->getId(), $request->request->get('_token'))) {
+        if ($this->isCsrfTokenValid('delete' . $lesson->getId(), $request->request->get('_token'))) {
             $entityManager = $this->getDoctrine()->getManager();
             $entityManager->remove($lesson);
             $entityManager->flush();

@@ -27,6 +27,7 @@ class LessonRepository extends ServiceEntityRepository
             'SELECT MAX(l.id)
             FROM App\Entity\Lesson l'
         );
+
         return $query->getSingleScalarResult();
     }
 
