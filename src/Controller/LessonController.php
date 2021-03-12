@@ -41,11 +41,7 @@ class LessonController extends AbstractController
 
             return $this->redirectToRoute(
                 'course_show',
-                [
-                    'id' => $lesson
-                        ->getCourse()
-                        ->getId(),
-                ]
+                ['id' => $lesson->getCourse()->getId()]
             );
         }
 
@@ -112,11 +108,7 @@ class LessonController extends AbstractController
 
         return $this->redirectToRoute(
             'course_show',
-            [
-                'id' => $lesson
-                    ->getCourse()
-                    ->getId(),
-            ]
+            ['id' => $lesson->getCourse()->getId()]
         );
     }
 }

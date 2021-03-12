@@ -11,8 +11,7 @@ class CourseFixtures extends Fixture
 {
     public function load(ObjectManager $manager)
     {
-        $data = [
-            'courses' => [
+        $data = ['courses' => [
                 [
                     'name' => 'Deep Learning (семестр 1, весна 2021): базовый поток',
                     'descriptions' => 'Школа глубокого обучения (Deep Learning School) – учебная организация' .
@@ -79,8 +78,7 @@ class CourseFixtures extends Fixture
                         ],
                     ],
                 ],
-            ],
-        ];
+            ]];
 
         foreach ($data['courses'] as $dataCourse) {
             $course = new Course();
@@ -89,7 +87,12 @@ class CourseFixtures extends Fixture
             $course->setDescription($dataCourse['descriptions']);
             $manager->persist($course);
             foreach ($dataCourse['lessons'] as $dataLesson) {
-                $lesson = $this->createLesson($course, $dataLesson['number'], $dataLesson['name'], $dataLesson['content']);
+                $lesson = $this->createLesson(
+                    $course,
+                    $dataLesson['number'],
+                    $dataLesson['name'],
+                    $dataLesson['content']
+                );
                 $manager->persist($lesson);
             }
         }
