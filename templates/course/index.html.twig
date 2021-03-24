@@ -49,7 +49,14 @@
         </div>
         <div class="row">
             <div class="col text-center">
-                <a href="{{ path('course_new') }}" class="btn btn-light" role="button">Новый курс</a>
+                {% if is_granted('ROLE_SUPER_ADMIN') %}
+                    <a href="{{ path('course_new') }}" class="btn btn-light" role="button">Новый курсADMIN</a>
+                {% endif %}
+            </div>
+            <div class="col text-center">
+                {% if is_granted('ROLE_USER') %}
+                    <a href="{{ path('course_new') }}" class="btn btn-light" role="button">Новый курсUSER</a>
+                {% endif %}
             </div>
         </div>
     </div>

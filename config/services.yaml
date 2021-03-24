@@ -32,3 +32,7 @@ services:
     App\Doctrine\EventListener\FixPostgreSQLDefaultSchemaListener:
         tags:
             - { name: doctrine.event_listener, event: postGenerateSchema }
+
+    App\Service\BillingClient:
+        autowire: true
+        arguments: ["%env(BILLING_URL_BASE)%", "%env(BILLING_API_VERSION)%"]

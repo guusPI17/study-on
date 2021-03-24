@@ -1,0 +1,27 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Профиль/StudyOn{% endblock %}
+
+{% block body %}
+    <header>
+        {% block header %}
+            {{ parent() }}
+        {% endblock %}
+    </header>
+
+    {{ user.username }}
+    <br>
+    {% if is_granted('ROLE_SUPER_ADMIN') %}
+        Администратор
+    {% else %}
+        Пользователь
+    {% endif %}
+    {{ user.balance }}
+    <br>
+
+    <footer>
+        {% block footer %}
+            {{ parent() }}
+        {% endblock %}
+    </footer>
+{% endblock %}
