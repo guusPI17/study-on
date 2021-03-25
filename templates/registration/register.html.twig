@@ -1,0 +1,92 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Регистрация / Study-On{% endblock %}
+
+{% block body %}
+
+    <header>
+        {% block header %}
+            {{ parent() }}
+        {% endblock %}
+    </header>
+
+    <div class="container">
+        <div class="row">
+            <div class="col"></div>
+            <div class="col-10">
+
+                <h1 class="text-center">Регистрация</h1>
+
+                <div class="row">
+                    <div class="col"></div>
+                    <div class="col-8">
+                        {% if errors is defined %}
+                            <div class="alert alert-danger">
+                                <ul>
+                                    {% for error in errors %}
+                                        <li>{{ error }}</li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                        {% endif %}
+                    </div>
+                    <div class="col"></div>
+                </div>
+
+                <div class="controls">
+                    {{ form_start(registrationForm) }}
+                    <div class="row">
+                        <div class="col"></div>
+                        <div class="col-6">
+                            <div class="form-group">
+                                <label for="email-input" class="form-label">E-mail</label>
+                                {{ form_widget(registrationForm.username, {'attr': {'class': 'form-control', 'id':'emai-input'}}) }}
+                                {{ form_errors(registrationForm.username) }}
+                            </div>
+                        </div>
+                        <div class="col"></div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col"></div>
+                        <div class="col-6">
+                            <div class="form-group">
+                                <label for="password-input" class="form-label">Пароль</label>
+                                {{ form_widget(registrationForm.password.first) }}
+                                {{ form_errors(registrationForm.password.first) }}
+                                <div class="help-block with-errors"></div>
+                            </div>
+                        </div>
+                        <div class="col"></div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col"></div>
+                        <div class="col-6">
+                            <div class="form-group">
+                                <label for="password-second-input" class="form-label">Повторный Пароль</label>
+                                {{ form_widget(registrationForm.password.second,
+                                    {'attr': {'class': 'form-control','id':'password-second-input'}}) }}
+                                <div class="help-block with-errors"></div>
+                            </div>
+                        </div>
+                        <div class="col"></div>
+                    </div>
+
+                    <div class="text-center">
+                        <input type="submit" class="btn btn-outline-dark" name="register"
+                               value="Зарегистрироваться">
+                    </div>
+                    {{ form_end(registrationForm) }}
+                </div>
+            </div>
+            <div class="col"></div>
+        </div>
+    </div>
+
+    <footer>
+        {% block footer %}
+            {{ parent() }}
+        {% endblock %}
+    </footer>
+{% endblock %}

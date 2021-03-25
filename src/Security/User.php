@@ -2,7 +2,7 @@
 
 namespace App\Security;
 
-use App\DTO\User as userDto;
+use App\DTO\User as UserDto;
 use Symfony\Component\Security\Core\User\UserInterface;
 
 class User implements UserInterface
@@ -96,12 +96,16 @@ class User implements UserInterface
     }
 
 
-    public static function fromDro(UserDto $userDto): self
+    public static function fromDto(UserDto $userDto): self
     {
         $user = new self();
-        $user->setEmail($userDto->getUsername());
-        $user->setRoles($userDto->getRoles());
-        $user->setApiToken($userDto->getApiToken());
+
+        $tokenParts = explode('.', $userDto->getToken());
+        $payload = json_decode(base64_decode($tokenParts[1]), true);
+
+        $user->setEmail($payload['username']);
+        $user->setRoles($payload['roles']);
+        $user->setApiToken($userDto->getToken());
 
         return $user;
     }

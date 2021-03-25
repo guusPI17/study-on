@@ -29,7 +29,7 @@ class User
     /**
      * @Serializer\Type("string")
      */
-    private $apiToken;
+    private $token;
 
     public function getUsername(): ?string
     {
@@ -71,13 +71,13 @@ class User
         $this->balance = $balance;
     }
 
-    public function getApiToken(): ?string
+    public function getToken(): ?string
     {
-        return $this->apiToken;
+        return $this->token;
     }
 
-    public function setApiToken(?string $apiToken): void
+    public function setToken(?string $token): void
     {
-        $this->apiToken = $apiToken;
+        $this->token = $token;
     }
 }

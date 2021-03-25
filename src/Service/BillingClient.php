@@ -46,24 +46,31 @@ class BillingClient
         if ($user) {
             $headers['Authorization'] = 'Bearer ' . $user->getApiToken();
         }
-        $data = $this->apiRequest('/users/current', 'GET', $headers);
+        $response = $this->apiRequest('/users/current', 'GET', $headers);
 
-        return $this->serializer->deserialize($data, UserDto::class, 'json');
+        return $this->serializer->deserialize($response, UserDto::class, 'json');
+    }
+
+    public function registration(UserDto $dataUser): UserDto
+    {
+        $dataSerialize = $this->serializer->serialize($dataUser, 'json');
+        $headers['Content-Type'] = 'application/json';
+        $response = $this->apiRequest('/register', 'POST', $headers, $dataSerialize);
+
+        /** @var UserDto $userDto */
+        $userDto = $this->serializer->deserialize($response, UserDto::class, 'json');
+
+        return $userDto;
     }
 
     public function authorization(UserDto $dataUser): UserDto
     {
         $dataSerialize = $this->serializer->serialize($dataUser, 'json');
         $headers['Content-Type'] = 'application/json';
-        $token = $this->apiRequest('/auth', 'POST', $headers, $dataSerialize);
+        $response = $this->apiRequest('/auth', 'POST', $headers, $dataSerialize);
 
-        $tokenParts = explode('.', $token);
-        $payload = json_decode(base64_decode($tokenParts[1]), true);
-
-        $userDto = new UserDto();
-        $userDto->setUsername($payload['username']);
-        $userDto->setRoles($payload['roles']);
-        $userDto->setApiToken(json_decode($token)->token);
+        /** @var UserDto $userDto */
+        $userDto = $this->serializer->deserialize($response, UserDto::class, 'json');
 
         return $userDto;
     }

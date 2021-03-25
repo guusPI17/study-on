@@ -28,13 +28,9 @@ class UserController extends AbstractController
             /** @var UserDto $userDto */
             $userDto = $this->billingClient->current();
         } catch (BillingUnavailableException $e) {
-            return $this->render('errors/error.html.twig', [
-                'error' => $e->getMessage(),
-            ]);
+            throw $this->createNotFoundException($e->getMessage());
         } catch (FailureResponseException $e) {
-            return $this->render('errors/error.html.twig', [
-                'error' => $e->getMessage(),
-            ]);
+            throw $this->createNotFoundException($e->getMessage());
         }
 
         return $this->render('user/profile.html.twig', [

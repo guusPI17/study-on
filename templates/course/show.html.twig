@@ -39,6 +39,7 @@
         <div class="row">
             <div class="col">
                 <a href="{{ path('course_index') }}" class="btn btn-light" role="button">К списку курсов</a>
+                {% if is_granted('ROLE_SUPER_ADMIN') %}
                 <a href="{{ path('course_edit', {'id': course.id}) }}" class="btn btn-light" role="button">Редактировать
                     курс</a>
 
@@ -46,6 +47,7 @@
                    class="btn btn-light" role="button">Добавить урок</a>
 
                 {{ include('course/_delete_form.html.twig') }}
+                {% endif %}
             </div>
         </div>
     </div>

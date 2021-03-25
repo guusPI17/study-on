@@ -2,7 +2,22 @@
     <div class="container-fluid">
         <div class="row nameSite">
             <div class="col-3">
-                StudyOn
+                <a href="{{ path('course_index') }}" class="btn-outline-dark">StudyOn</a>
+            </div>
+            <div class="col">
+                <div class="headerRightPanel">
+                    {% if is_granted('IS_AUTHENTICATED_FULLY') %}
+                        <a href="{{ path('user_profile') }}" class="btn btn-outline-dark"
+                           role="button">Профиль</a>
+                        <a href="{{ path('app_logout') }}" class="btn btn-outline-dark"
+                           role="button">Выход</a>
+                    {% else %}
+                        <a href="{{ path('app_register') }}" class="btn btn-outline-dark"
+                           role="button">Регистрация</a>
+                        <a href="{{ path('app_login') }}" class="btn btn-outline-dark"
+                           role="button">Авторизация</a>
+                    {% endif %}
+                </div>
             </div>
         </div>
     </div>
