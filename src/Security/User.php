@@ -95,7 +95,6 @@ class User implements UserInterface
         // $this->plainPassword = null;
     }
 
-
     public static function fromDto(UserDto $userDto): self
     {
         $user = new self();

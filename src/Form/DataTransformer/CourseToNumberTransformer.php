@@ -48,9 +48,7 @@ class CourseToNumberTransformer implements DataTransformerInterface
             ->find($courseNumber);
 
         if (null === $course) {
-            throw new TransformationFailedException(
-                sprintf('An course with number "%s" does not exist!', $courseNumber)
-            );
+            throw new TransformationFailedException(sprintf('An course with number "%s" does not exist!', $courseNumber));
         }
 
         return $course;

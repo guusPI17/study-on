@@ -34,5 +34,6 @@ services:
             - { name: doctrine.event_listener, event: postGenerateSchema }
 
     App\Service\BillingClient:
+        public: true
         autowire: true
         arguments: ["%env(BILLING_URL_BASE)%", "%env(BILLING_API_VERSION)%"]

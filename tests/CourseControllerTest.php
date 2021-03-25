@@ -4,6 +4,8 @@ namespace App\Tests;
 
 use App\DataFixtures\CourseFixtures;
 use App\Entity\Course;
+use App\Security\User;
+use App\Tests\Mock\BillingClientMock;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\DomCrawler\Crawler;
 use Symfony\Component\DomCrawler\Form;
@@ -11,38 +13,259 @@ use Symfony\Component\HttpFoundation\RedirectResponse;
 
 class CourseControllerTest extends AbstractTest
 {
-    private $urlBase = '/courses';
+    private $urlBase;
+    private $errorsForm;
+    private $elementsForm;
+    private $checkData;
 
-    private $errorsForm = [
-        'code' => [
-            'uniqueFalse' => 'Данный код уже занят',
-            'longLength' => 'Длина должна быть не более 255 символов',
-            'empty' => 'Заполните код',
-        ],
-        'name' => [
-            'longLength' => 'Длина должна быть не более 255 символов',
-            'empty' => 'Заполните название',
-        ],
-        'description' => ['longLength' => 'Длина должна быть не более 1000 символов'],
-    ];
+    private $billingUrlBase;
+    private $billingApiVersion;
 
-    private $elementsForm = [
-        [
-            'name' => 'code',
-            'labelFor' => 'course_code',
-        ],
-        [
-            'name' => 'name',
-            'labelFor' => 'course_name',
-        ],
-        [
-            'name' => 'description',
-            'labelFor' => 'course_description',
-        ],
-    ];
+    private $httpClient;
+    private $serializer;
+    private $security;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->elementsForm = [
+            [
+                'name' => 'code',
+                'labelFor' => 'course_code',
+            ],
+            [
+                'name' => 'name',
+                'labelFor' => 'course_name',
+            ],
+            [
+                'name' => 'description',
+                'labelFor' => 'course_description',
+            ],
+        ];
+        $this->errorsForm = [
+            'code' => [
+                'uniqueFalse' => 'Данный код уже занят',
+                'longLength' => 'Длина должна быть не более 255 символов',
+                'empty' => 'Заполните код',
+            ],
+            'name' => [
+                'longLength' => 'Длина должна быть не более 255 символов',
+                'empty' => 'Заполните название',
+            ],
+            'description' => ['longLength' => 'Длина должна быть не более 1000 символов'],
+        ];
+        // последний элемент массива с верными данными
+        $this->checkData = [
+            [
+                'code' => [
+                    'text' => '',
+                    'request' => $this->errorsForm['code']['empty'],
+                ],
+                'name' => [
+                    'text' => '',
+                    'request' => $this->errorsForm['name']['empty'],
+                ],
+                'description' => [
+                    'text' => str_repeat('1', 1001),
+                    'request' => $this->errorsForm['description']['longLength'],
+                ],
+            ],
+            [
+                'code' => [
+                    'text' => 'C202103011957AG',
+                    'request' => $this->errorsForm['code']['uniqueFalse'],
+                ],
+                'name' => [
+                    'text' => str_repeat('1', 256),
+                    'request' => $this->errorsForm['name']['longLength'],
+                ],
+                'description' => [
+                    'text' => 'TestDescriptionCourse',
+                    'request' => 0,
+                ],
+            ],
+            [
+                'code' => [
+                    'text' => str_repeat('1', 256),
+                    'request' => $this->errorsForm['code']['longLength'],
+                ],
+                'name' => [
+                    'text' => 'TestNameCourse',
+                    'request' => 0,
+                ],
+                'description' => [
+                    'text' => 'TestDescriptionCourse',
+                    'request' => 0,
+                ],
+            ],
+            [
+                'code' => [
+                    'text' => 'TestCodeCourse',
+                    'request' => 0,
+                ],
+                'name' => [
+                    'text' => 'TestNameCourse',
+                    'request' => 0,
+                ],
+                'description' => [
+                    'text' => 'TestDescriptionCourse',
+                    'request' => 0,
+                ],
+            ],
+        ];
+        $this->httpClient = self::$container->get('http_client');
+        $this->serializer = self::$container->get('jms_serializer');
+        $this->security = self::$container->get('security.helper');
+        $this->billingUrlBase = 'billing.study-on.local';
+        $this->billingApiVersion = 'v1';
+        $this->urlBase = '/courses';
+    }
+
+    private function serviceSubstitution(): void
+    {
+        // запрещаем перезагрузку ядра, чтобы не сбросилась подмена сервиса при запросе
+        self::getClient()->disableReboot();
+
+        // подмена сервиса
+        self::getClient()->getContainer()->set(
+            'App\Service\BillingClient',
+            new BillingClientMock(
+                $this->billingUrlBase,
+                $this->billingApiVersion,
+                $this->httpClient,
+                $this->serializer,
+                $this->security
+            )
+        );
+    }
+
+    /**
+     * Авторизация под ролью ROLE_SUPER_ADMIN
+     */
+    private function authorizationAdmin()
+    {
+        // подмена сервиса
+        $this->serviceSubstitution();
+        $client = self::getClient();
+
+        // проверка перехода на страницу авторизации (/login)
+        $crawler = $client->request('GET', '/login');
+        $this->assertResponseOk();
+        self::assertEquals('/login', $client->getRequest()->getPathInfo());
+
+        $dataUser = [
+            'email' => 'admin@test.com',
+            'password' => 'admin@test.com',
+            'roles' => 'ROLE_SUPER_ADMIN',
+        ];
+
+        // работа с формой
+        $form = $crawler->selectButton('Войти')->form();
+        $form['email'] = $dataUser['email'];
+        $form['password'] = $dataUser['password'];
+        $crawler = $client->submit($form);
+
+        // редирект на /course
+        $crawler = $client->followRedirect();
+        $this->assertResponseOk();
+        self::assertEquals('/courses/', $client->getRequest()->getPathInfo());
+
+        // проверка авторизированного пользователя
+        /** @var User $user */
+        $user = $this->security->getUser();
+        self::assertNotNull($user);
+        self::assertEquals($dataUser['email'], $user->getUsername());
+        self::assertContains($dataUser['roles'], $user->getRoles());
+    }
+
+    /**
+     * Авторизация под ролью ROLE_USER
+     */
+    private function authorizationUser()
+    {
+        // подмена сервиса
+        $this->serviceSubstitution();
+        $client = self::getClient();
+
+        // проверка перехода на страницу авторизации (/login)
+        $crawler = $client->request('GET', '/login');
+        $this->assertResponseOk();
+        self::assertEquals('/login', $client->getRequest()->getPathInfo());
+
+        $dataUser = [
+            'email' => 'user@test.com',
+            'password' => 'user@test.com',
+            'roles' => 'ROLE_USER',
+        ];
+
+        // работа с формой
+        $form = $crawler->selectButton('Войти')->form();
+        $form['email'] = $dataUser['email'];
+        $form['password'] = $dataUser['password'];
+        $crawler = $client->submit($form);
+
+        // редирект на /course
+        $crawler = $client->followRedirect();
+        $this->assertResponseOk();
+        self::assertEquals('/courses/', $client->getRequest()->getPathInfo());
+
+        // проверка авторизированного пользователя
+        /** @var User $user */
+        $user = $this->security->getUser();
+        self::assertNotNull($user);
+        self::assertEquals($dataUser['email'], $user->getUsername());
+        self::assertContains($dataUser['roles'], $user->getRoles());
+    }
+
+    public function testLackOfAdminFunctionality()
+    {
+        // авторизация под user
+        $this->authorizationUser();
+
+        /** @var EntityManagerInterface $em */
+        $em = self::getEntityManager();
+        $courses = $em->getRepository(Course::class)->findAll();
+
+        $crawler = self::getClient()->request('GET', $this->urlBase . '/');
+        $this->assertResponseOk();
+
+        // проверка на отсутсвие кнопки
+        $button = $crawler->selectLink('Новый курс')->count();
+        $this->assertEquals($button, 0);
+
+        self::getClient()->request('GET', $this->urlBase . '/new');
+        $this->assertResponseCode(403);
+
+        foreach ($courses as $course) {
+            /* @var Course $course */
+            $crawler = self::getClient()->request('GET', $this->urlBase . '/' . $course->getId());
+            $this->assertResponseOk();
+
+            // проверка на отсутсвие кнопки
+            $button = $crawler->selectLink('Добавить урок')->count();
+            $this->assertEquals($button, 0);
+
+            // проверка на отсутсвие кнопки
+            $button = $crawler->selectLink('Редактировать курс')->count();
+            $this->assertEquals($button, 0);
+
+            // проверка на отсутсвие кнопки
+            $button = $crawler->selectLink('Удалить')->count();
+            $this->assertEquals($button, 0);
+
+            self::getClient()->request('GET', $this->urlBase . '/' . $course->getId() . '/edit');
+            $this->assertResponseCode(403);
+
+            self::getClient()->request('DELETE', $this->urlBase . '/' . $course->getId());
+            $this->assertResponseCode(403);
+        }
+    }
 
     public function testPageResponseOk()
     {
+        // авторизация под админом
+        $this->authorizationAdmin();
+
         /** @var EntityManagerInterface $em */
         $em = self::getEntityManager();
         $courses = $em->getRepository(Course::class)->findAll();
@@ -52,13 +275,14 @@ class CourseControllerTest extends AbstractTest
 
         self::getClient()->request('GET', $this->urlBase . '/new');
         $this->assertResponseOk();
-        $gg = 'gfg' . 'hhh';
-        $gf = 4 + 3;
 
         foreach ($courses as $course) {
             /* @var Course $course */
             self::getClient()->request('GET', $this->urlBase . '/' . $course->getId());
             $this->assertResponseOk();
+
+            self::getClient()->request('DELETE', $this->urlBase . '/' . $course->getId());
+            $this->assertResponseCode(302);
 
             self::getClient()->request('GET', $this->urlBase . '/' . $course->getId() . '/edit');
             $this->assertResponseOk();
@@ -67,6 +291,9 @@ class CourseControllerTest extends AbstractTest
 
     public function testPageResponseNotFound(): void
     {
+        // авторизация под админом
+        $this->authorizationAdmin();
+
         /** @var EntityManagerInterface $em */
         $em = self::getEntityManager();
         $maxId = $em->getRepository(Course::class)->findMaxId();
@@ -82,6 +309,9 @@ class CourseControllerTest extends AbstractTest
 
     public function testCourseEdit(): void
     {
+        // авторизация под админом
+        $this->authorizationAdmin();
+
         // проверка перехода на страницу курсов (/courses)
         $crawler = self::getClient()->request('GET', $this->urlBase . '/');
         $this->assertResponseOk();
@@ -132,66 +362,8 @@ class CourseControllerTest extends AbstractTest
         self::assertEquals($course->getDescription(), $form['course[description]']->getValue());
 
         // проверка формы на валидность данные
-        // последний элемент массива с верными данными
-        $checkData = [
-            [
-                'code' => [
-                        'text' => '',
-                        'request' => $this->errorsForm['code']['empty'],
-                    ],
-                'name' => [
-                        'text' => '',
-                        'request' => $this->errorsForm['name']['empty'],
-                    ],
-                'description' => [
-                        'text' => str_repeat('1', 1001),
-                        'request' => $this->errorsForm['description']['longLength'],
-                    ],
-            ],
-            [
-                'code' => [
-                        'text' => 'C202103011957AG',
-                        'request' => $this->errorsForm['code']['uniqueFalse'],
-                    ],
-                'name' => [
-                        'text' => str_repeat('1', 256),
-                        'request' => $this->errorsForm['name']['longLength'],
-                    ],
-                'description' => [
-                        'text' => 'TestDescriptionCourse',
-                        'request' => 0,
-                    ],
-            ],
-            [
-                'code' => [
-                        'text' => str_repeat('1', 256),
-                        'request' => $this->errorsForm['code']['longLength'],
-                    ],
-                'name' => [
-                        'text' => 'TestNameCourse',
-                        'request' => 0,
-                    ],
-                'description' => [
-                        'text' => 'TestDescriptionCourse',
-                        'request' => 0,
-                    ],
-            ],
-            [
-                'code' => [
-                        'text' => 'TestCodeCourse',
-                        'request' => 0,
-                    ],
-                'name' => [
-                        'text' => 'TestNameCourse',
-                        'request' => 0,
-                    ],
-                'description' => [
-                        'text' => 'TestDescriptionCourse',
-                        'request' => 0,
-                    ],
-            ],
-        ];
-        foreach ($checkData as $i => $iValue) {
+
+        foreach ($this->checkData as $i => $iValue) {
             $crawler = $this->checkForm($form, $iValue);
             foreach ($this->elementsForm as $value) {
                 $errorCrawler = $crawler->filter("label[for=$value[labelFor]] .form-error-message");
@@ -200,7 +372,7 @@ class CourseControllerTest extends AbstractTest
                 } else {
                     self::assertEquals($iValue[$value['name']]['request'], 0);
                 }
-                if ($i + 1 != count($checkData)) {
+                if ($i + 1 != count($this->checkData)) {
                     self::assertNotInstanceOf(RedirectResponse::class, self::getClient()->getResponse());
                 } else {
                     $this->assertResponseRedirect();
@@ -239,6 +411,9 @@ class CourseControllerTest extends AbstractTest
 
     public function testCourseShow(): void
     {
+        // авторизация под админом
+        $this->authorizationAdmin();
+
         // проверка перехода на страницу курсов (/courses)
         $crawler = self::getClient()->request('GET', $this->urlBase . '/');
         $this->assertResponseOk();
@@ -306,6 +481,9 @@ class CourseControllerTest extends AbstractTest
 
     public function testCourseDelete(): void
     {
+        // авторизация под админом
+        $this->authorizationAdmin();
+
         // проверка перехода на страницу курсов (/courses)
         $crawler = self::getClient()->request('GET', $this->urlBase . '/');
         $this->assertResponseOk();
@@ -372,6 +550,9 @@ class CourseControllerTest extends AbstractTest
 
     public function testCourseNew(): void
     {
+        // авторизация под админом
+        $this->authorizationAdmin();
+
         // проверка перехода на страницу курсов (/courses)
         $crawler = self::getClient()->request('GET', $this->urlBase . '/');
         $this->assertResponseOk();
@@ -386,67 +567,9 @@ class CourseControllerTest extends AbstractTest
         $this->assertResponseOk();
 
         // проверка формы на валидность данные
-        // последний элемент массива с верными данными
-        $checkData = [
-            [
-                'code' => [
-                        'text' => '',
-                        'request' => $this->errorsForm['code']['empty'],
-                    ],
-                'name' => [
-                        'text' => '',
-                        'request' => $this->errorsForm['name']['empty'],
-                    ],
-                'description' => [
-                        'text' => str_repeat('1', 1001),
-                        'request' => $this->errorsForm['description']['longLength'],
-                    ],
-            ],
-            [
-                'code' => [
-                        'text' => 'C202103011957AG',
-                        'request' => $this->errorsForm['code']['uniqueFalse'],
-                    ],
-                'name' => [
-                        'text' => str_repeat('1', 256),
-                        'request' => $this->errorsForm['name']['longLength'],
-                    ],
-                'description' => [
-                        'text' => 'TestDescriptionCourse',
-                        'request' => 0,
-                    ],
-            ],
-            [
-                'code' => [
-                        'text' => str_repeat('1', 256),
-                        'request' => $this->errorsForm['code']['longLength'],
-                    ],
-                'name' => [
-                        'text' => 'TestNameCourse',
-                        'request' => 0,
-                    ],
-                'description' => [
-                        'text' => 'TestDescriptionCourse',
-                        'request' => 0,
-                    ],
-            ],
-            [
-                'code' => [
-                        'text' => 'TestCodeCourse',
-                        'request' => 0,
-                    ],
-                'name' => [
-                        'text' => 'TestNameCourse',
-                        'request' => 0,
-                    ],
-                'description' => [
-                        'text' => 'TestDescriptionCourse',
-                        'request' => 0,
-                    ],
-            ],
-        ];
+
         $form = $crawler->selectButton('Сохранить')->form();
-        foreach ($checkData as $i => $iValue) {
+        foreach ($this->checkData as $i => $iValue) {
             $crawler = $this->checkForm($form, $iValue);
             foreach ($this->elementsForm as $value) {
                 $errorCrawler = $crawler->filter("label[for=$value[labelFor]] .form-error-message");
@@ -455,7 +578,7 @@ class CourseControllerTest extends AbstractTest
                 } else {
                     self::assertEquals($iValue[$value['name']]['request'], 0);
                 }
-                if ($i + 1 != count($checkData)) {
+                if ($i + 1 != count($this->checkData)) {
                     self::assertNotInstanceOf(RedirectResponse::class, self::getClient()->getResponse());
                 } else {
                     $this->assertResponseRedirect();

@@ -6,7 +6,7 @@ use Symfony\Component\Security\Core\Exception\UnsupportedUserException;
 use Symfony\Component\Security\Core\Exception\UsernameNotFoundException;
 use Symfony\Component\Security\Core\User\PasswordUpgraderInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
-use Symfony\Component\Security\Core\User\UserProviderInterface;;
+use Symfony\Component\Security\Core\User\UserProviderInterface;
 
 class UserProvider implements UserProviderInterface, PasswordUpgraderInterface
 {
@@ -30,6 +30,7 @@ class UserProvider implements UserProviderInterface, PasswordUpgraderInterface
         //throw new \Exception('TODO: fill in loadUserByUsername() inside '.__FILE__);
         $user = new User();
         $user->setApiToken($username);
+
         return $user;
     }
 

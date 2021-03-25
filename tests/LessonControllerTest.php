@@ -5,6 +5,8 @@ namespace App\Tests;
 use App\DataFixtures\CourseFixtures;
 use App\Entity\Course;
 use App\Entity\Lesson;
+use App\Security\User;
+use App\Tests\Mock\BillingClientMock;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\DomCrawler\Crawler;
 use Symfony\Component\DomCrawler\Form;
@@ -12,39 +14,255 @@ use Symfony\Component\HttpFoundation\RedirectResponse;
 
 class LessonControllerTest extends AbstractTest
 {
-    private $urlLessons = '/lessons';
-    private $urlCourses = '/courses';
+    private $urlLessons;
+    private $urlCourses;
+    private $errorsForm;
+    private $elementsForm;
+    private $checkData;
 
-    private $errorsForm = [
-        'name' => [
-            'longLength' => 'Длина должна быть не более 255 символов',
-            'empty' => 'Заполните название',
-        ],
-        'content' => ['empty' => 'Заполните содержимое урока'],
-        'number' => [
-            'longLength' => 'Разрешенное число от 1 до 10000',
-            'empty' => 'Заполните номер урока',
-            'errorType' => 'This value is not valid.',
-        ],
-    ];
+    private $billingUrlBase;
+    private $billingApiVersion;
 
-    private $elementsForm = [
-        [
-            'name' => 'name',
-            'labelFor' => 'lesson_name',
-        ],
-        [
-            'name' => 'content',
-            'labelFor' => 'lesson_content',
-        ],
-        [
-            'name' => 'number',
-            'labelFor' => 'lesson_number',
-        ],
-    ];
+    private $httpClient;
+    private $serializer;
+    private $security;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->elementsForm = [
+            [
+                'name' => 'name',
+                'labelFor' => 'lesson_name',
+            ],
+            [
+                'name' => 'content',
+                'labelFor' => 'lesson_content',
+            ],
+            [
+                'name' => 'number',
+                'labelFor' => 'lesson_number',
+            ],
+        ];
+        $this->errorsForm = [
+            'name' => [
+                'longLength' => 'Длина должна быть не более 255 символов',
+                'empty' => 'Заполните название',
+            ],
+            'content' => ['empty' => 'Заполните содержимое урока'],
+            'number' => [
+                'longLength' => 'Разрешенное число от 1 до 10000',
+                'empty' => 'Заполните номер урока',
+                'errorType' => 'This value is not valid.',
+            ],
+        ];
+        // последний элемент массива с верными данными
+        $this->checkData = [
+            [
+                'name' => [
+                    'text' => '',
+                    'request' => $this->errorsForm['name']['empty'],
+                ],
+                'content' => [
+                    'text' => '',
+                    'request' => $this->errorsForm['content']['empty'],
+                ],
+                'number' => [
+                    'text' => '',
+                    'request' => $this->errorsForm['number']['empty'],
+                ],
+            ],
+            [
+                'name' => [
+                    'text' => str_repeat('1', 256),
+                    'request' => $this->errorsForm['name']['longLength'],
+                ],
+                'content' => [
+                    'text' => 'TestContentLesson',
+                    'request' => 0,
+                ],
+                'number' => [
+                    'text' => '10001',
+                    'request' => $this->errorsForm['number']['longLength'],
+                ],
+            ],
+            [
+                'name' => [
+                    'text' => 'TestNameLesson',
+                    'request' => 0,
+                ],
+                'content' => [
+                    'text' => 'TestContentLesson',
+                    'request' => 0,
+                ],
+                'number' => [
+                    'text' => '13g5',
+                    'request' => $this->errorsForm['number']['errorType'],
+                ],
+            ],
+            [
+                'name' => [
+                    'text' => 'TestNameLesson',
+                    'request' => 0,
+                ],
+                'content' => [
+                    'text' => 'TestContentLesson',
+                    'request' => 0,
+                ],
+                'number' => [
+                    'text' => '10',
+                    'request' => 0,
+                ],
+            ],
+        ];
+        $this->httpClient = self::$container->get('http_client');
+        $this->serializer = self::$container->get('jms_serializer');
+        $this->security = self::$container->get('security.helper');
+        $this->billingUrlBase = 'billing.study-on.local';
+        $this->billingApiVersion = 'v1';
+        $this->urlCourses = '/courses';
+        $this->urlLessons = '/lessons';
+    }
+
+    private function serviceSubstitution(): void
+    {
+        // запрещаем перезагрузку ядра, чтобы не сбросилась подмена сервиса при запросе
+        self::getClient()->disableReboot();
+
+        // подмена сервиса
+        self::getClient()->getContainer()->set(
+            'App\Service\BillingClient',
+            new BillingClientMock(
+                $this->billingUrlBase,
+                $this->billingApiVersion,
+                $this->httpClient,
+                $this->serializer,
+                $this->security
+            )
+        );
+    }
+
+    /**
+     * Авторизация под ролью ROLE_SUPER_ADMIN
+     */
+    private function authorizationAdmin()
+    {
+        // подмена сервиса
+        $this->serviceSubstitution();
+        $client = self::getClient();
+
+        // проверка перехода на страницу авторизации (/login)
+        $crawler = $client->request('GET', '/login');
+        $this->assertResponseOk();
+        self::assertEquals('/login', $client->getRequest()->getPathInfo());
+
+        $dataUser = [
+            'email' => 'admin@test.com',
+            'password' => 'admin@test.com',
+            'roles' => 'ROLE_SUPER_ADMIN',
+        ];
+
+        // работа с формой
+        $form = $crawler->selectButton('Войти')->form();
+        $form['email'] = $dataUser['email'];
+        $form['password'] = $dataUser['password'];
+        $crawler = $client->submit($form);
+
+        // редирект на /course
+        $crawler = $client->followRedirect();
+        $this->assertResponseOk();
+        self::assertEquals('/courses/', $client->getRequest()->getPathInfo());
+
+        // проверка авторизированного пользователя
+        /** @var User $user */
+        $user = $this->security->getUser();
+        self::assertNotNull($user);
+        self::assertEquals($dataUser['email'], $user->getUsername());
+        self::assertContains($dataUser['roles'], $user->getRoles());
+    }
+
+    /**
+     * Авторизация под ролью ROLE_USER
+     */
+    private function authorizationUser()
+    {
+        // подмена сервиса
+        $this->serviceSubstitution();
+        $client = self::getClient();
+
+        // проверка перехода на страницу авторизации (/login)
+        $crawler = $client->request('GET', '/login');
+        $this->assertResponseOk();
+        self::assertEquals('/login', $client->getRequest()->getPathInfo());
+
+        $dataUser = [
+            'email' => 'user@test.com',
+            'password' => 'user@test.com',
+            'roles' => 'ROLE_USER',
+        ];
+
+        // работа с формой
+        $form = $crawler->selectButton('Войти')->form();
+        $form['email'] = $dataUser['email'];
+        $form['password'] = $dataUser['password'];
+        $crawler = $client->submit($form);
+
+        // редирект на /course
+        $crawler = $client->followRedirect();
+        $this->assertResponseOk();
+        self::assertEquals('/courses/', $client->getRequest()->getPathInfo());
+
+        // проверка авторизированного пользователя
+        /** @var User $user */
+        $user = $this->security->getUser();
+        self::assertNotNull($user);
+        self::assertEquals($dataUser['email'], $user->getUsername());
+        self::assertContains($dataUser['roles'], $user->getRoles());
+    }
+
+    public function testLackOfAdminFunctionality()
+    {
+        // авторизация под user
+        $this->authorizationUser();
+
+        /** @var EntityManagerInterface $em */
+        $em = self::getEntityManager();
+
+        $courses = $em->getRepository(Course::class)->findAll();
+
+        foreach ($courses as $course) {
+            /* @var Course $course */
+            self::getClient()->request('GET', $this->urlLessons . '/new?course_id=' . $course->getId());
+            $this->assertResponseCode(403);
+        }
+
+        $lessons = $em->getRepository(Lesson::class)->findAll();
+        foreach ($lessons as $lesson) {
+            /* @var Lesson $lesson */
+            $crawler = self::getClient()->request('GET', $this->urlLessons . '/' . $lesson->getId());
+            $this->assertResponseOk();
+
+            // проверка на отсутсвие кнопки
+            $button = $crawler->selectLink('Редактировать')->count();
+            $this->assertEquals($button, 0);
+
+            // проверка на отсутсвие кнопки
+            $button = $crawler->selectLink('Удалить')->count();
+            $this->assertEquals($button, 0);
+
+            self::getClient()->request('GET', $this->urlLessons . '/' . $lesson->getId() . '/edit');
+            $this->assertResponseCode(403);
+
+            self::getClient()->request('DELETE', $this->urlLessons . '/' . $lesson->getId());
+            $this->assertResponseCode(403);
+        }
+    }
 
     public function testPageResponseOk()
     {
+        // авторизация под админом
+        $this->authorizationAdmin();
+
         /** @var EntityManagerInterface $em */
         $em = self::getEntityManager();
 
@@ -62,6 +280,9 @@ class LessonControllerTest extends AbstractTest
             self::getClient()->request('GET', $this->urlLessons . '/' . $lesson->getId());
             $this->assertResponseOk();
 
+            self::getClient()->request('DELETE', $this->urlLessons . '/' . $lesson->getId());
+            $this->assertResponseCode(302);
+
             self::getClient()->request('GET', $this->urlLessons . '/' . $lesson->getId() . '/edit');
             $this->assertResponseOk();
         }
@@ -69,6 +290,9 @@ class LessonControllerTest extends AbstractTest
 
     public function testPageResponseNotFound(): void
     {
+        // авторизация под админом
+        $this->authorizationAdmin();
+
         /** @var EntityManagerInterface $em */
         $em = self::getEntityManager();
         $maxIdLesson = $em->getRepository(Lesson::class)->findMaxId();
@@ -89,6 +313,9 @@ class LessonControllerTest extends AbstractTest
 
     public function testLessonNew(): void
     {
+        // авторизация под админом
+        $this->authorizationAdmin();
+
         // проверка перехода на страницу курсов
         $crawler = self::getClient()->request('GET', $this->urlCourses . '/');
         $this->assertResponseOk();
@@ -133,67 +360,8 @@ class LessonControllerTest extends AbstractTest
         $this->assertResponseOk();
 
         // проверка формы на валидность данные
-        // последний элемент массива с верными данными
-        $checkData = [
-            [
-                'name' => [
-                        'text' => '',
-                        'request' => $this->errorsForm['name']['empty'],
-                    ],
-                'content' => [
-                        'text' => '',
-                        'request' => $this->errorsForm['content']['empty'],
-                    ],
-                'number' => [
-                        'text' => '',
-                        'request' => $this->errorsForm['number']['empty'],
-                    ],
-            ],
-            [
-                'name' => [
-                        'text' => str_repeat('1', 256),
-                        'request' => $this->errorsForm['name']['longLength'],
-                    ],
-                'content' => [
-                        'text' => 'TestContentLesson',
-                        'request' => 0,
-                    ],
-                'number' => [
-                        'text' => '10001',
-                        'request' => $this->errorsForm['number']['longLength'],
-                    ],
-            ],
-            [
-                'name' => [
-                        'text' => 'TestNameLesson',
-                        'request' => 0,
-                    ],
-                'content' => [
-                        'text' => 'TestContentLesson',
-                        'request' => 0,
-                    ],
-                'number' => [
-                        'text' => '13g5',
-                        'request' => $this->errorsForm['number']['errorType'],
-                    ],
-            ],
-            [
-                'name' => [
-                        'text' => 'TestNameLesson',
-                        'request' => 0,
-                    ],
-                'content' => [
-                        'text' => 'TestContentLesson',
-                        'request' => 0,
-                    ],
-                'number' => [
-                        'text' => '10',
-                        'request' => 0,
-                    ],
-            ],
-        ];
         $form = $crawler->selectButton('Сохранить')->form();
-        foreach ($checkData as $i => $iValue) {
+        foreach ($this->checkData as $i => $iValue) {
             $crawler = $this->checkForm($form, $iValue);
             foreach ($this->elementsForm as $value) {
                 $errorCrawler = $crawler->filter("label[for=$value[labelFor]] .form-error-message");
@@ -202,7 +370,7 @@ class LessonControllerTest extends AbstractTest
                 } else {
                     self::assertEquals($iValue[$value['name']]['request'], 0);
                 }
-                if ($i + 1 != count($checkData)) {
+                if ($i + 1 != count($this->checkData)) {
                     self::assertNotInstanceOf(RedirectResponse::class, self::getClient()->getResponse());
                 } else {
                     $this->assertResponseRedirect();
@@ -254,6 +422,9 @@ class LessonControllerTest extends AbstractTest
 
     public function testLessonShow(): void
     {
+        // авторизация под админом
+        $this->authorizationAdmin();
+
         // проверка перехода на страницу курсов (/courses)
         $crawler = self::getClient()->request('GET', $this->urlCourses . '/');
         $this->assertResponseOk();
@@ -343,6 +514,9 @@ class LessonControllerTest extends AbstractTest
 
     public function testLessonEdit(): void
     {
+        // авторизация под админом
+        $this->authorizationAdmin();
+
         // проверка перехода на страницу курсов
         $crawler = self::getClient()->request('GET', $this->urlCourses . '/');
         $this->assertResponseOk();
@@ -409,66 +583,7 @@ class LessonControllerTest extends AbstractTest
         self::assertEquals($course->getId(), $form['lesson[course]']->getValue());
 
         // проверка формы на валидность данные
-        // последний элемент массива с верными данными
-        $checkData = [
-            [
-                'name' => [
-                        'text' => '',
-                        'request' => $this->errorsForm['name']['empty'],
-                    ],
-                'content' => [
-                        'text' => '',
-                        'request' => $this->errorsForm['content']['empty'],
-                    ],
-                'number' => [
-                        'text' => '',
-                        'request' => $this->errorsForm['number']['empty'],
-                    ],
-            ],
-            [
-                'name' => [
-                        'text' => str_repeat('1', 256),
-                        'request' => $this->errorsForm['name']['longLength'],
-                    ],
-                'content' => [
-                        'text' => 'TestContentLesson',
-                        'request' => 0,
-                    ],
-                'number' => [
-                        'text' => '10001',
-                        'request' => $this->errorsForm['number']['longLength'],
-                    ],
-            ],
-            [
-                'name' => [
-                        'text' => 'TestNameLesson',
-                        'request' => 0,
-                    ],
-                'content' => [
-                        'text' => 'TestContentLesson',
-                        'request' => 0,
-                    ],
-                'number' => [
-                        'text' => '13g5',
-                        'request' => $this->errorsForm['number']['errorType'],
-                    ],
-            ],
-            [
-                'name' => [
-                        'text' => 'TestNameLesson',
-                        'request' => 0,
-                    ],
-                'content' => [
-                        'text' => 'TestContentLesson',
-                        'request' => 0,
-                    ],
-                'number' => [
-                        'text' => '10',
-                        'request' => 0,
-                    ],
-            ],
-        ];
-        foreach ($checkData as $i => $iValue) {
+        foreach ($this->checkData as $i => $iValue) {
             $crawler = $this->checkForm($form, $iValue);
             foreach ($this->elementsForm as $value) {
                 $errorCrawler = $crawler->filter("label[for=$value[labelFor]] .form-error-message");
@@ -477,7 +592,7 @@ class LessonControllerTest extends AbstractTest
                 } else {
                     self::assertEquals($iValue[$value['name']]['request'], 0);
                 }
-                if ($i + 1 != count($checkData)) {
+                if ($i + 1 != count($this->checkData)) {
                     self::assertNotInstanceOf(RedirectResponse::class, self::getClient()->getResponse());
                 } else {
                     $this->assertResponseRedirect();
@@ -546,6 +661,9 @@ class LessonControllerTest extends AbstractTest
 
     public function testLessonDelete(): void
     {
+        // авторизация под админом
+        $this->authorizationAdmin();
+
         // проверка перехода на страницу курсов (/courses)
         $crawler = self::getClient()->request('GET', $this->urlCourses . '/');
         $this->assertResponseOk();

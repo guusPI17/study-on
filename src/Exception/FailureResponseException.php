@@ -14,6 +14,7 @@ class FailureResponseException extends \Exception
         $this->responseDto = $responseDto;
         parent::__construct($responseDto->getMessage(), $responseDto->getCode(), $previous);
     }
+
     public function getErrors(): array
     {
         return $this->responseDto->getError();

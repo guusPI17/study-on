@@ -75,7 +75,6 @@ class Authenticator extends AbstractFormLoginAuthenticator
         $userDto = new UserDto();
         $userDto->setUsername($credentials['email']);
         $userDto->setPassword($credentials['password']);
-
         try {
             $user = User::fromDto($this->billingClient->authorization($userDto));
         } catch (FailureResponseException $e) {
