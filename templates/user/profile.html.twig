@@ -13,15 +13,15 @@
         <div class="row">
             <div class="col"></div>
             <div class="col-6 text-center">
-                <h4>E-mail: {{ user.username }}</h4>
-                <h4>Роль:
+                <h4 id="email">E-mail: {{ user.username }}</h4>
+                <h4 id="role">Роль:
                 {% if is_granted('ROLE_SUPER_ADMIN') %}
                     Администратор
                 {% else %}
                     Пользователь
                 {% endif %}
                 </h4>
-                <h4>Баланс: {{ user.balance }}</h4>
+                <h4 id="balance">Баланс: {{ user.balance }}</h4>
                 <a href="{{ path('course_index') }}" class="btn btn-outline-dark" role="button">Курсы</a>
             </div>
             <div class="col"></div>

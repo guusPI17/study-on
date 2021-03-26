@@ -23,7 +23,7 @@ class RegistrationFormType extends AbstractType
                 'constraints' => [
                     new Length([
                         'min' => 6,
-                        'minMessage' => 'Ваш пароль не менее {{ limit }} символов.',
+                        'minMessage' => 'Ваш пароль менее {{ limit }} символов.',
                     ]),
                 ],
             ]);

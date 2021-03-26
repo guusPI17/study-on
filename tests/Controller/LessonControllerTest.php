@@ -1,11 +1,12 @@
 <?php
 
-namespace App\Tests;
+namespace App\Tests\Controller;
 
 use App\DataFixtures\CourseFixtures;
 use App\Entity\Course;
 use App\Entity\Lesson;
 use App\Security\User;
+use App\Tests\AbstractTest;
 use App\Tests\Mock\BillingClientMock;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\DomCrawler\Crawler;
@@ -19,6 +20,9 @@ class LessonControllerTest extends AbstractTest
     private $errorsForm;
     private $elementsForm;
     private $checkData;
+
+    private $dataAdmin;
+    private $dataUser;
 
     private $billingUrlBase;
     private $billingApiVersion;
@@ -115,6 +119,16 @@ class LessonControllerTest extends AbstractTest
                 ],
             ],
         ];
+        $this->dataAdmin = [
+            'email' => 'admin@test.com',
+            'password' => 'admin@test.com',
+            'roles' => 'ROLE_SUPER_ADMIN',
+        ];
+        $this->dataUser = [
+            'email' => 'user@test.com',
+            'password' => 'user@test.com',
+            'roles' => 'ROLE_USER',
+        ];
         $this->httpClient = self::$container->get('http_client');
         $this->serializer = self::$container->get('jms_serializer');
         $this->security = self::$container->get('security.helper');
@@ -142,49 +156,15 @@ class LessonControllerTest extends AbstractTest
         );
     }
 
-    /**
-     * Авторизация под ролью ROLE_SUPER_ADMIN
-     */
-    private function authorizationAdmin()
+    protected function getFixtures(): array
     {
-        // подмена сервиса
-        $this->serviceSubstitution();
-        $client = self::getClient();
-
-        // проверка перехода на страницу авторизации (/login)
-        $crawler = $client->request('GET', '/login');
-        $this->assertResponseOk();
-        self::assertEquals('/login', $client->getRequest()->getPathInfo());
-
-        $dataUser = [
-            'email' => 'admin@test.com',
-            'password' => 'admin@test.com',
-            'roles' => 'ROLE_SUPER_ADMIN',
-        ];
-
-        // работа с формой
-        $form = $crawler->selectButton('Войти')->form();
-        $form['email'] = $dataUser['email'];
-        $form['password'] = $dataUser['password'];
-        $crawler = $client->submit($form);
-
-        // редирект на /course
-        $crawler = $client->followRedirect();
-        $this->assertResponseOk();
-        self::assertEquals('/courses/', $client->getRequest()->getPathInfo());
-
-        // проверка авторизированного пользователя
-        /** @var User $user */
-        $user = $this->security->getUser();
-        self::assertNotNull($user);
-        self::assertEquals($dataUser['email'], $user->getUsername());
-        self::assertContains($dataUser['roles'], $user->getRoles());
+        return [CourseFixtures::class];
     }
 
     /**
-     * Авторизация под ролью ROLE_USER
+     * Авторизация
      */
-    private function authorizationUser()
+    private function authorization($dataAccount)
     {
         // подмена сервиса
         $this->serviceSubstitution();
@@ -195,16 +175,10 @@ class LessonControllerTest extends AbstractTest
         $this->assertResponseOk();
         self::assertEquals('/login', $client->getRequest()->getPathInfo());
 
-        $dataUser = [
-            'email' => 'user@test.com',
-            'password' => 'user@test.com',
-            'roles' => 'ROLE_USER',
-        ];
-
         // работа с формой
         $form = $crawler->selectButton('Войти')->form();
-        $form['email'] = $dataUser['email'];
-        $form['password'] = $dataUser['password'];
+        $form['email'] = $dataAccount['email'];
+        $form['password'] = $dataAccount['password'];
         $crawler = $client->submit($form);
 
         // редирект на /course
@@ -216,14 +190,14 @@ class LessonControllerTest extends AbstractTest
         /** @var User $user */
         $user = $this->security->getUser();
         self::assertNotNull($user);
-        self::assertEquals($dataUser['email'], $user->getUsername());
-        self::assertContains($dataUser['roles'], $user->getRoles());
+        self::assertEquals($dataAccount['email'], $user->getUsername());
+        self::assertContains($dataAccount['roles'], $user->getRoles());
     }
 
     public function testLackOfAdminFunctionality()
     {
         // авторизация под user
-        $this->authorizationUser();
+        $this->authorization($this->dataUser);
 
         /** @var EntityManagerInterface $em */
         $em = self::getEntityManager();
@@ -233,7 +207,7 @@ class LessonControllerTest extends AbstractTest
         foreach ($courses as $course) {
             /* @var Course $course */
             self::getClient()->request('GET', $this->urlLessons . '/new?course_id=' . $course->getId());
-            $this->assertResponseCode(403);
+            $this->assertResponseForbidden();
         }
 
         $lessons = $em->getRepository(Lesson::class)->findAll();
@@ -244,24 +218,24 @@ class LessonControllerTest extends AbstractTest
 
             // проверка на отсутсвие кнопки
             $button = $crawler->selectLink('Редактировать')->count();
-            $this->assertEquals($button, 0);
+            self::assertEquals($button, 0);
 
             // проверка на отсутсвие кнопки
             $button = $crawler->selectLink('Удалить')->count();
-            $this->assertEquals($button, 0);
+            self::assertEquals($button, 0);
 
             self::getClient()->request('GET', $this->urlLessons . '/' . $lesson->getId() . '/edit');
-            $this->assertResponseCode(403);
+            $this->assertResponseForbidden();
 
             self::getClient()->request('DELETE', $this->urlLessons . '/' . $lesson->getId());
-            $this->assertResponseCode(403);
+            $this->assertResponseForbidden();
         }
     }
 
     public function testPageResponseOk()
     {
         // авторизация под админом
-        $this->authorizationAdmin();
+        $this->authorization($this->dataAdmin);
 
         /** @var EntityManagerInterface $em */
         $em = self::getEntityManager();
@@ -281,7 +255,7 @@ class LessonControllerTest extends AbstractTest
             $this->assertResponseOk();
 
             self::getClient()->request('DELETE', $this->urlLessons . '/' . $lesson->getId());
-            $this->assertResponseCode(302);
+            $this->assertResponseRedirect();
 
             self::getClient()->request('GET', $this->urlLessons . '/' . $lesson->getId() . '/edit');
             $this->assertResponseOk();
@@ -291,7 +265,7 @@ class LessonControllerTest extends AbstractTest
     public function testPageResponseNotFound(): void
     {
         // авторизация под админом
-        $this->authorizationAdmin();
+        $this->authorization($this->dataAdmin);
 
         /** @var EntityManagerInterface $em */
         $em = self::getEntityManager();
@@ -314,7 +288,7 @@ class LessonControllerTest extends AbstractTest
     public function testLessonNew(): void
     {
         // авторизация под админом
-        $this->authorizationAdmin();
+        $this->authorization($this->dataAdmin);
 
         // проверка перехода на страницу курсов
         $crawler = self::getClient()->request('GET', $this->urlCourses . '/');
@@ -423,7 +397,7 @@ class LessonControllerTest extends AbstractTest
     public function testLessonShow(): void
     {
         // авторизация под админом
-        $this->authorizationAdmin();
+        $this->authorization($this->dataAdmin);
 
         // проверка перехода на страницу курсов (/courses)
         $crawler = self::getClient()->request('GET', $this->urlCourses . '/');
@@ -515,7 +489,7 @@ class LessonControllerTest extends AbstractTest
     public function testLessonEdit(): void
     {
         // авторизация под админом
-        $this->authorizationAdmin();
+        $this->authorization($this->dataAdmin);
 
         // проверка перехода на страницу курсов
         $crawler = self::getClient()->request('GET', $this->urlCourses . '/');
@@ -662,7 +636,7 @@ class LessonControllerTest extends AbstractTest
     public function testLessonDelete(): void
     {
         // авторизация под админом
-        $this->authorizationAdmin();
+        $this->authorization($this->dataAdmin);
 
         // проверка перехода на страницу курсов (/courses)
         $crawler = self::getClient()->request('GET', $this->urlCourses . '/');
@@ -772,10 +746,5 @@ class LessonControllerTest extends AbstractTest
         $form['lesson[number]'] = $data['number']['text'];
 
         return self::getClient()->submit($form);
-    }
-
-    protected function getFixtures(): array
-    {
-        return [CourseFixtures::class];
     }
 }

@@ -38,7 +38,7 @@
                     <div class="row">
                         <div class="col"></div>
                         <div class="col-6">
-                            <div class="form-group">
+                            <div class="form-group" id="username">
                                 <label for="email-input" class="form-label">E-mail</label>
                                 {{ form_widget(registrationForm.username, {'attr': {'class': 'form-control', 'id':'emai-input'}}) }}
                                 {{ form_errors(registrationForm.username) }}
@@ -50,7 +50,7 @@
                     <div class="row">
                         <div class="col"></div>
                         <div class="col-6">
-                            <div class="form-group">
+                            <div class="form-group" id="password">
                                 <label for="password-input" class="form-label">Пароль</label>
                                 {{ form_widget(registrationForm.password.first) }}
                                 {{ form_errors(registrationForm.password.first) }}
@@ -63,7 +63,7 @@
                     <div class="row">
                         <div class="col"></div>
                         <div class="col-6">
-                            <div class="form-group">
+                            <div class="form-group" id="passwordSecond">
                                 <label for="password-second-input" class="form-label">Повторный Пароль</label>
                                 {{ form_widget(registrationForm.password.second,
                                     {'attr': {'class': 'form-control','id':'password-second-input'}}) }}

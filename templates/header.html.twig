@@ -6,7 +6,7 @@
             </div>
             <div class="col">
                 <div class="headerRightPanel">
-                    {% if is_granted('IS_AUTHENTICATED_FULLY') %}
+                    {% if is_granted('IS_AUTHENTICATED_FULLY') or is_granted('IS_REMEMBERED') %}
                         <a href="{{ path('user_profile') }}" class="btn btn-outline-dark"
                            role="button">Профиль</a>
                         <a href="{{ path('app_logout') }}" class="btn btn-outline-dark"

@@ -2,6 +2,7 @@
 
 namespace App\Security;
 
+use App\Security\User;
 use Symfony\Component\Security\Core\Exception\UnsupportedUserException;
 use Symfony\Component\Security\Core\Exception\UsernameNotFoundException;
 use Symfony\Component\Security\Core\User\PasswordUpgraderInterface;
@@ -28,9 +29,9 @@ class UserProvider implements UserProviderInterface, PasswordUpgraderInterface
         // it is whatever value is being returned by the getUsername()
         // method in your User class.
         //throw new \Exception('TODO: fill in loadUserByUsername() inside '.__FILE__);
-        $user = new User();
-        $user->setApiToken($username);
 
+        $user = new User();
+        $user->setEmail($username);
         return $user;
     }
 
