@@ -2,7 +2,7 @@
 
 namespace App\Security;
 
-use App\DTO\User as userDto;
+use App\DTO\User as UserDto;
 use App\Exception\BillingUnavailableException;
 use App\Exception\FailureResponseException;
 use App\Service\BillingClient;

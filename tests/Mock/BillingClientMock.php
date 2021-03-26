@@ -15,7 +15,6 @@ class BillingClientMock extends BillingClient
 {
     private $security;
     private $arrUsers;
-    private $serializer;
 
     public function __construct(
         string $billingUrlBase,
@@ -45,7 +44,6 @@ class BillingClientMock extends BillingClient
         $this->arrUsers = [$user, $admin];
 
         $this->security = $security;
-        $this->serializer = $serializer;
     }
 
     public function authorization(UserDto $user): UserDto
