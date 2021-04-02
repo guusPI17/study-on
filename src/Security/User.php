@@ -3,6 +3,7 @@
 namespace App\Security;
 
 use App\DTO\User as UserDto;
+use App\Service\DecodingJwt;
 use Symfony\Component\Security\Core\User\UserInterface;
 
 class User implements UserInterface
@@ -11,7 +12,23 @@ class User implements UserInterface
 
     private $apiToken;
 
+    private $refreshToken;
+
     private $roles = [];
+
+    public static function fromDto(UserDto $userDto, DecodingJwt $decodingJwt): self
+    {
+        $user = new self();
+
+        $decodingJwt->decoding($userDto->getToken());
+
+        $user->setEmail($decodingJwt->getUsername());
+        $user->setRoles($decodingJwt->getRoles());
+        $user->setApiToken($userDto->getToken());
+        $user->setRefreshToken($userDto->getRefreshToken());
+
+        return $user;
+    }
 
     public function getEmail(): ?string
     {
@@ -37,6 +54,18 @@ class User implements UserInterface
         return $this;
     }
 
+    public function getRefreshToken(): ?string
+    {
+        return $this->refreshToken;
+    }
+
+    public function setRefreshToken(string $refreshToken): self
+    {
+        $this->refreshToken = $refreshToken;
+
+        return $this;
+    }
+
     /**
      * A visual identifier that represents this user.
      *
@@ -44,7 +73,7 @@ class User implements UserInterface
      */
     public function getUsername(): string
     {
-       return (string) $this->email;
+        return (string) $this->email;
     }
 
     /**
@@ -93,19 +122,5 @@ class User implements UserInterface
     {
         // If you store any temporary, sensitive data on the user, clear it here
         // $this->plainPassword = null;
-    }
-
-    public static function fromDto(UserDto $userDto): self
-    {
-        $user = new self();
-
-        $tokenParts = explode('.', $userDto->getToken());
-        $payload = json_decode(base64_decode($tokenParts[1]), true);
-
-        $user->setEmail($payload['username']);
-        $user->setRoles($payload['roles']);
-        $user->setApiToken($userDto->getToken());
-
-        return $user;
     }
 }

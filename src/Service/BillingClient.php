@@ -37,6 +37,18 @@ class BillingClient
         $this->security = $security;
     }
 
+    public function refreshToken(UserDto $dataUser): UserDto
+    {
+        $dataSerialize = $this->serializer->serialize($dataUser, 'json');
+        $headers['Content-Type'] = 'application/json';
+        $response = $this->apiRequest('/token/refresh', 'POST', $headers, $dataSerialize);
+
+        /** @var UserDto $userDto */
+        $userDto = $this->serializer->deserialize($response, UserDto::class, 'json');
+
+        return $userDto;
+    }
+
     public function current(): UserDto
     {
         /** @var User $user */

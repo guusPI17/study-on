@@ -31,6 +31,11 @@ class User
      */
     private $token;
 
+    /**
+     * @Serializer\Type("string")
+     */
+    private $refreshToken;
+
     public function getUsername(): ?string
     {
         return $this->username;
@@ -79,5 +84,15 @@ class User
     public function setToken(?string $token): void
     {
         $this->token = $token;
+    }
+
+    public function getRefreshToken(): ?string
+    {
+        return $this->refreshToken;
+    }
+
+    public function setRefreshToken(?string $refreshToken): void
+    {
+        $this->refreshToken = $refreshToken;
     }
 }

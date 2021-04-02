@@ -2,7 +2,13 @@
 
 namespace App\Security;
 
-use App\Security\User;
+use App\DTO\User as UserDto;
+use App\Exception\BillingUnavailableException;
+use App\Exception\FailureResponseException;
+use App\Service\BillingClient;
+use App\Service\DecodingJwt;
+use DateInterval;
+use DateTime;
 use Symfony\Component\Security\Core\Exception\UnsupportedUserException;
 use Symfony\Component\Security\Core\Exception\UsernameNotFoundException;
 use Symfony\Component\Security\Core\User\PasswordUpgraderInterface;
@@ -11,6 +17,15 @@ use Symfony\Component\Security\Core\User\UserProviderInterface;
 
 class UserProvider implements UserProviderInterface, PasswordUpgraderInterface
 {
+    private $decodingJwt;
+    private $billingClient;
+
+    public function __construct(DecodingJwt $decodingJwt, BillingClient $billingClient)
+    {
+        $this->decodingJwt = $decodingJwt;
+        $this->billingClient = $billingClient;
+    }
+
     /**
      * Symfony calls this method if you use features like switch_user
      * or remember_me.
@@ -32,6 +47,7 @@ class UserProvider implements UserProviderInterface, PasswordUpgraderInterface
 
         $user = new User();
         $user->setEmail($username);
+
         return $user;
     }
 
@@ -54,8 +70,24 @@ class UserProvider implements UserProviderInterface, PasswordUpgraderInterface
             throw new UnsupportedUserException(sprintf('Invalid user class "%s".', get_class($user)));
         }
 
-        // Return a User object after making sure its data is "fresh".
-        // Or throw a UsernameNotFoundException if the user no longer exists.
+        $this->decodingJwt->decoding($user->getApiToken());
+
+        $exp = (new DateTime())->setTimestamp($this->decodingJwt->getExp()); // unixTime to DateTime
+        $time = (new DateTime())->add(new DateInterval('PT2M')); // 2 минуты
+
+        if ($time <= $exp) {
+            try {
+                $userDto = new UserDto();
+                $userDto->setRefreshToken($user->getRefreshToken());
+                $userDto = $this->billingClient->refreshToken($userDto);
+                $user->setApiToken($userDto->getToken());
+                $user->setRefreshToken($userDto->getRefreshToken());
+            } catch (BillingUnavailableException $e) {
+                throw new \Exception($e->getMessage());
+            } catch (FailureResponseException $e) {
+                throw new \Exception($e->getMessage());
+            }
+        }
         return $user;
     }
 

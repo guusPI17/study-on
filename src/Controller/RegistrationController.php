@@ -9,6 +9,7 @@ use App\Form\RegistrationFormType;
 use App\Security\Authenticator;
 use App\Security\User;
 use App\Service\BillingClient;
+use App\Service\DecodingJwt;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -24,7 +25,8 @@ class RegistrationController extends AbstractController
         Request $request,
         GuardAuthenticatorHandler $guardHandler,
         Authenticator $authenticator,
-        BillingClient $billingClient
+        BillingClient $billingClient,
+        DecodingJwt $decodingJwt
     ): Response {
         if ($this->getUser()) {
             return $this->redirectToRoute('user_profile');
@@ -36,7 +38,7 @@ class RegistrationController extends AbstractController
 
         if ($form->isSubmitted() && $form->isValid()) {
             try {
-                $user = User::fromDto($billingClient->registration($userDto));
+                $user = User::fromDto($billingClient->registration($userDto), $decodingJwt);
             } catch (FailureResponseException $e) {
                 return $this->render('registration/register.html.twig', [
                     'registrationForm' => $form->createView(),

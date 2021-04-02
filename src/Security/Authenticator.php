@@ -6,6 +6,7 @@ use App\DTO\User as UserDto;
 use App\Exception\BillingUnavailableException;
 use App\Exception\FailureResponseException;
 use App\Service\BillingClient;
+use App\Service\DecodingJwt;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
@@ -29,15 +30,18 @@ class Authenticator extends AbstractFormLoginAuthenticator
     private $urlGenerator;
     private $csrfTokenManager;
     private $billingClient;
+    private $decodingJwt;
 
     public function __construct(
         UrlGeneratorInterface $urlGenerator,
         CsrfTokenManagerInterface $csrfTokenManager,
-        BillingClient $billingClient
+        BillingClient $billingClient,
+        DecodingJwt $decodingJwt
     ) {
         $this->urlGenerator = $urlGenerator;
         $this->csrfTokenManager = $csrfTokenManager;
         $this->billingClient = $billingClient;
+        $this->decodingJwt = $decodingJwt;
     }
 
     public function supports(Request $request)
@@ -76,13 +80,12 @@ class Authenticator extends AbstractFormLoginAuthenticator
         $userDto->setUsername($credentials['email']);
         $userDto->setPassword($credentials['password']);
         try {
-            $user = User::fromDto($this->billingClient->authorization($userDto));
+            $user = User::fromDto($this->billingClient->authorization($userDto), $this->decodingJwt);
         } catch (FailureResponseException $e) {
             throw new CustomUserMessageAuthenticationException($e->getMessage());
         } catch (BillingUnavailableException $e) {
             throw new CustomUserMessageAuthenticationException($e->getMessage());
         }
-
         return $user;
     }
 
