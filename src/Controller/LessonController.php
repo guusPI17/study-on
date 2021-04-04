@@ -2,11 +2,17 @@
 
 namespace App\Controller;
 
+use App\DTO\Course as CourseDto;
+use App\DTO\Transaction as TransactionDto;
 use App\Entity\Course;
 use App\Entity\Lesson;
+use App\Exception\BillingUnavailableException;
+use App\Exception\FailureResponseException;
 use App\Form\LessonType;
+use App\Service\BillingClient;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\IsGranted;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\Security\Core\Exception\AccessDeniedException;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
@@ -16,6 +22,13 @@ use Symfony\Component\Routing\Annotation\Route;
  */
 class LessonController extends AbstractController
 {
+    private $billingClient;
+
+    public function __construct(BillingClient $billingClient)
+    {
+        $this->billingClient = $billingClient;
+    }
+
     /**
      * @Route("/new", name="lesson_new", methods={"GET","POST"})
      * @IsGranted("ROLE_SUPER_ADMIN")
@@ -64,6 +77,25 @@ class LessonController extends AbstractController
      */
     public function show(Lesson $lesson): Response
     {
+        try {
+            $codeCourse = $lesson->getCourse()->getCode();
+            /** @var CourseDto $courseDto */
+            $courseDto = $this->billingClient->oneCourse($codeCourse);
+            if ('free' !== $courseDto->getType()) {
+                $queryFilter = "type=payment&course_code=$codeCourse&skip_expired=1";
+                /** @var TransactionDto[] $transactionsDto */
+                $transactionsDto = $this->billingClient->transactionHistory($queryFilter);
+
+                if (0 == count($transactionsDto)) {
+                    throw new AccessDeniedException('Данный урок вам не доступен!');
+                }
+            }
+        } catch (BillingUnavailableException $e) {
+            throw new \Exception($e->getMessage());
+        } catch (FailureResponseException $e) {
+            throw new \Exception($e->getMessage());
+        }
+
         return $this->render(
             'lesson/show.html.twig',
             ['lesson' => $lesson]

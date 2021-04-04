@@ -31,6 +31,21 @@
     margin-top: 10px;
 }
 
+.line-show{
+    height:30px;
+    width: 100%;
+    border-top:1px solid gray;
+    padding-left:10px;
+    padding-right:10px;
+    margin-bottom: 10px;
+    margin-top: 10px;
+}
+
 .headerRightPanel{
     float:right;
+}
+
+.price span{
+    color:green;
+    font-size: 21px;
 }

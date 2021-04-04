@@ -11,6 +11,23 @@
 
     <h1 class="center-h1">Курсы</h1>
 
+    <div class="container">
+        <div class="row">
+            <div class="col">
+                <div class="line">
+                </div>
+            </div>
+        </div>
+        {% if is_granted('ROLE_SUPER_ADMIN') %}
+            <div class="row">
+                <div class="col text-center">
+                    <a href="{{ path('course_new') }}" class="btn btn-light" role="button">Новый курс</a>
+                </div>
+            </div>
+            <br>
+        {% endif %}
+    </div>
+
     <div class="container" id="courses">
     {% for course in courses %}
         <div class="row course border border-dark shadow p-3 mb-5 bg-white">
@@ -23,8 +40,37 @@
                         {{ course.description }}
                     </div>
                 {% endif %}
+                <div class="line">
+                    <div class="price">
+                        {% if infoPurchases[course.code] is defined %}
+                            {% if 'buy' == infoPrices[course.code].type %}
+                                <span>Куплено</span>
+                            {% elseif 'rent' == infoPrices[course.code].type %}
+                        <span>Арендовано до {{ infoPurchases[course.code].createdAt }}</span>
+                            {% else %}
+                               <span> Добавлено бесплатно</span>
+                            {% endif %}
+                        {% else %}
+                            {% include('course/pay.html.twig') with {'course': course, 'infoPrices': infoPrices} %}
+
+                            {% if 'buy' == infoPrices[course.code].type %}
+                                <button data-toggle="modal" data-target="#modalCenter-{{ course.code }}">
+                                    Купить за {{ infoPrices[course.code].price ~ 'р.' }}
+                                </button>
+                            {% elseif 'rent' == infoPrices[course.code].type %}
+                                <button data-toggle="modal" data-target="#modalCenter-{{ course.code }}">
+                                    Арендовать за {{ infoPrices[course.code].price ~ 'р.' }}
+                                </button>
+                            {% else %}
+                                <button data-toggle="modal" data-target="#modalCenter-{{ course.code }}">
+                                    Добавить бесплатно
+                                </button>
+                            {% endif %}
+                        {% endif %}
+                    </div>
+                </div>
                 <div class="linq-button">
-                    <a href="{{ path('course_show', {'id': course.id}) }}">Пройти</a>
+                    <a href="{{ path('course_show', {'id': course.id}) }}">Просмотреть</a>
                 </div>
             </div>
         </div>
@@ -40,21 +86,7 @@
             </div>
         </div>
     {% endfor %}
-    <div class="container">
-        <div class="row">
-            <div class="col">
-                <div class="line">
-                </div>
-            </div>
-        </div>
-        <div class="row">
-            <div class="col text-center">
-                {% if is_granted('ROLE_SUPER_ADMIN') %}
-                    <a href="{{ path('course_new') }}" class="btn btn-light" role="button">Новый курс</a>
-                {% endif %}
-            </div>
-        </div>
-    </div>
+
 
     <footer>
         {% block footer %}

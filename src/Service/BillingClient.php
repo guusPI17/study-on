@@ -2,6 +2,8 @@
 
 namespace App\Service;
 
+use App\DTO\Course as CourseDto;
+use App\DTO\Pay as PayDto;
 use App\DTO\Response as ResponseDto;
 use App\DTO\User as UserDto;
 use App\Exception\BillingUnavailableException;
@@ -47,6 +49,56 @@ class BillingClient
         $userDto = $this->serializer->deserialize($response, UserDto::class, 'json');
 
         return $userDto;
+    }
+
+    public function payCourse(string $codeCourse): PayDto
+    {
+        /** @var User $user */
+        $user = $this->security->getUser();
+
+        $headers['Content-Type'] = 'application/json';
+        if ($user) {
+            $headers['Authorization'] = 'Bearer ' . $user->getApiToken();
+        }
+        $response = $this->apiRequest("/courses/$codeCourse/pay", 'POST', $headers);
+
+        return $this->serializer->deserialize($response, PayDto::class, 'json');
+    }
+
+    public function listCourses(): array
+    {
+        $headers['Content-Type'] = 'application/json';
+        $response = $this->apiRequest('/courses', 'GET', $headers);
+
+        return $this->serializer->deserialize($response, 'array<App\DTO\Course>', 'json');
+    }
+
+    public function oneCourse(string $codeCourse): CourseDto
+    {
+        /** @var User $user */
+        $user = $this->security->getUser();
+
+        $headers['Content-Type'] = 'application/json';
+        if ($user) {
+            $headers['Authorization'] = 'Bearer ' . $user->getApiToken();
+        }
+        $response = $this->apiRequest("/courses/$codeCourse", 'GET', $headers);
+
+        return $this->serializer->deserialize($response, CourseDto::class, 'json');
+    }
+
+    public function transactionHistory(string $query = ''): array
+    {
+        /** @var User $user */
+        $user = $this->security->getUser();
+
+        $headers['Content-Type'] = 'application/json';
+        if ($user) {
+            $headers['Authorization'] = 'Bearer ' . $user->getApiToken();
+        }
+        $response = $this->apiRequest("/transactions/filter?$query", 'GET', $headers);
+
+        return $this->serializer->deserialize($response, 'array<App\DTO\Transaction>', 'json');
     }
 
     public function current(): UserDto

@@ -295,7 +295,7 @@ class CourseControllerTest extends AbstractTest
         $em = self::getEntityManager();
         /** @var Course $course */
         $course = $em->getRepository(Course::class)->findOneBy(
-            ['code' => 'C202103011958AG']
+            ['code' => 'statistics_course']
         );
         self::assertNotNull($course);
 

@@ -24,7 +24,6 @@
             </div>
         </div>
     </div>
-    </div>
 
     <br>
     {{ include('lesson/index.html.twig') }}
@@ -32,26 +31,56 @@
     <div class="container">
         <div class="row">
             <div class="col">
-                <div class="line">
-                </div>
+                {% if infoPurchases[course.code] is defined %}
+                    <div class="line-show">
+                        <div class="price text-center">
+                            {% if 'buy' == infoPrices[course.code].type %}
+                                <span>Куплено</span>
+                            {% elseif 'rent' == infoPrices[course.code].type %}
+                                <span>Арендовано до {{ infoPurchases[course.code].createdAt }}</span>
+                            {% else %}
+                                <span>Добавлено бесплатно</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                {% else %}
+                    <div class="line"></div>
+                {% endif %}
             </div>
         </div>
         <div class="row">
             <div class="col">
                 <a href="{{ path('course_index') }}" class="btn btn-light" role="button">К списку курсов</a>
                 {% if is_granted('ROLE_SUPER_ADMIN') %}
-                <a href="{{ path('course_edit', {'id': course.id}) }}" class="btn btn-light" role="button">Редактировать
-                    курс</a>
+                    <a href="{{ path('course_edit', {'id': course.id}) }}" class="btn btn-light" role="button">Редактировать
+                        курс</a>
 
-                <a href="{{ path('lesson_new', app.request.query.all|merge({ 'course_id': course.id })) }}"
-                   class="btn btn-light" role="button">Добавить урок</a>
+                    <a href="{{ path('lesson_new', app.request.query.all|merge({ 'course_id': course.id })) }}"
+                       class="btn btn-light" role="button">Добавить урок</a>
 
-                {{ include('course/_delete_form.html.twig') }}
+                {% endif %}
+                {% if infoPurchases[course.code] is not defined %}
+                    {{ include('course/pay.html.twig') }}
+                    {% if 'buy' == infoPrices[course.code].type %}
+                        <button data-toggle="modal" data-target="#modalCenter-{{ course.code }}" class="btn btn-primary">
+                            Купить за {{ infoPrices[course.code].price ~ 'р.' }}
+                        </button>
+                    {% elseif 'rent' == infoPrices[course.code].type %}
+                        <button data-toggle="modal" data-target="#modalCenter-{{ course.code }}" class="btn btn-primary">
+                            Арендовать за {{ infoPrices[course.code].price ~ 'р.' }}
+                        </button>
+                    {% else %}
+                        <button data-toggle="modal" data-target="#modalCenter-{{ course.code }}" class="btn btn-primary">
+                            Добавить бесплатно
+                        </button>
+                    {% endif %}
+                {% endif %}
+                {% if is_granted('ROLE_SUPER_ADMIN') %}
+                    {{ include('course/_delete_form.html.twig') }}
                 {% endif %}
             </div>
         </div>
     </div>
-
     <footer>
         {% block footer %}
             {{ parent() }}

@@ -16,6 +16,17 @@
     <header>
         {% block header %}
             {{ include('header.html.twig') }}
+            <!-- flash message -->
+            {% for message in app.flashes('success') %}
+                <div class="alert alert-success text-center">
+                    {{ message }}
+                </div>
+            {% endfor %}
+            {% for message in app.flashes('error') %}
+                <div class="alert alert-danger text-center">
+                    {{ message }}
+                </div>
+            {% endfor %}
         {% endblock %}
     </header>
     <footer>

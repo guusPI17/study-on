@@ -75,7 +75,7 @@ class UserProvider implements UserProviderInterface, PasswordUpgraderInterface
         $exp = (new DateTime())->setTimestamp($this->decodingJwt->getExp()); // unixTime to DateTime
         $time = (new DateTime())->add(new DateInterval('PT2M')); // 2 минуты
 
-        if ($time <= $exp) {
+        if ($time >= $exp) {
             try {
                 $userDto = new UserDto();
                 $userDto->setRefreshToken($user->getRefreshToken());
@@ -88,6 +88,7 @@ class UserProvider implements UserProviderInterface, PasswordUpgraderInterface
                 throw new \Exception($e->getMessage());
             }
         }
+
         return $user;
     }
 

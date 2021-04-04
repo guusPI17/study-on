@@ -19,10 +19,10 @@ security:
                 path: app_logout
                 # where to redirect after logout
                 # target: app_any_route
-            remember_me:
-                secret:   '%kernel.secret%'
-                lifetime: 604800
-                path:     /
+#            remember_me:
+#                secret:   '%kernel.secret%'
+#                lifetime: 604800
+#                path:     /
                 # by default, the feature is enabled by checking a
                 # checkbox in the login form (see below), uncomment the
                 # following line to always enable it.
@@ -39,4 +39,6 @@ security:
     access_control:
         - { path: ^/login, roles: IS_AUTHENTICATED_ANONYMOUSLY }
         - { path: ^/register, roles: IS_AUTHENTICATED_ANONYMOUSLY }
-        - { path: ^/, roles: [IS_AUTHENTICATED_FULLY, IS_REMEMBERED] }
+        - { path: ^/courses/$, roles: IS_AUTHENTICATED_ANONYMOUSLY }
+        - { path: ^/$, roles: IS_AUTHENTICATED_ANONYMOUSLY }
+        - { path: ^/, roles: IS_AUTHENTICATED_FULLY }

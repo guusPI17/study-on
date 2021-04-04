@@ -1,0 +1,67 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}История транзакций/StudyOn{% endblock %}
+
+{% block body %}
+    <header>
+        {% block header %}
+            {{ parent() }}
+        {% endblock %}
+    </header>
+
+    <div class="container">
+        <div class="row">
+            <div class="col"></div>
+            <div class="col-10 text-center">
+                <h3> История транзакций</h3>
+                <table class="table table-striped">
+                    <thead>
+                    <tr>
+                        <th scope="col">№</th>
+                        <th scope="col">Тип</th>
+                        <th scope="col">Сумма</th>
+                        <th scope="col">Назначение</th>
+                        <th scope="col">Дата</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {% for transaction in transactions %}
+                        <tr>
+                            <th scope="row">{{ loop.index }}</th>
+                            <td>{{ transaction.type == 'deposit' ? 'Пополнение' : 'Списание' }}</td>
+                            <td>{{ transaction.amount }}</td>
+                            {% if transaction.courseCode %}
+                                <div class="linq-button">
+                                    <td>
+                                        Покупка курса <a target="_blank" href="{{ path('course_show', {'id': transaction.id}) }}">
+                                            {{ transaction.courseCode }}
+                                        </a>
+                                    </td>
+                                </div>
+                            {% else %}
+                             <td>Пополнение счета</td>
+                            {% endif %}
+                            <td>{{ transaction.createdAt }}</td>
+                        </tr>
+                    {% else %}
+                        <tr>
+                            <th scope="row"> - </th>
+                            <td> - </td>
+                            <td> - </td>
+                            <td> - </td>
+                            <td> - </td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            <div class="col"></div>
+        </div>
+    </div>
+
+    <footer>
+        {% block footer %}
+            {{ parent() }}
+        {% endblock %}
+    </footer>
+{% endblock %}

@@ -11,13 +11,14 @@ class CourseFixtures extends Fixture
 {
     public function load(ObjectManager $manager)
     {
-        $data = ['courses' => [
+        $data = [
+            'courses' => [
                 [
                     'name' => 'Deep Learning (семестр 1, весна 2021): базовый поток',
                     'descriptions' => 'Школа глубокого обучения (Deep Learning School) – учебная организация' .
                         ' на базе Физтех-школы, прикладной математики и информатики Московского' .
                         ' физико-технического института.',
-                    'code' => 'C202103011957AG',
+                    'code' => 'deep_learning',
                     'lessons' => [
                         [
                             'name' => 'Введение',
@@ -37,7 +38,7 @@ class CourseFixtures extends Fixture
                     'name' => 'Принципы дизайна исследований и статистики в медицине',
                     'descriptions' => 'Статистика и исследования – это не скучно, а про кото-вероятности и' .
                         ' шансы убежать от зомби!',
-                    'code' => 'C202103011958AG',
+                    'code' => 'statistics_course',
                     'lessons' => [
                         [
                             'name' => 'Введение в статистику',
@@ -58,7 +59,7 @@ class CourseFixtures extends Fixture
                     'descriptions' => 'Если знаешь основы программирования и изучаешь самостоятельно язык' .
                         ' программирования C#' .
                         'Если готовишься к собеседованиям на роль C# программиста',
-                    'code' => 'C202103012023AG',
+                    'code' => 'c_sharp_course',
                     'lessons' => [
                         [
                             'name' => 'Windows Forms - основы',
@@ -78,7 +79,20 @@ class CourseFixtures extends Fixture
                         ],
                     ],
                 ],
-            ]];
+                [
+                    'name' => 'Курсы Python',
+                    'descriptions' => 'Курсы по увлекательному python',
+                    'code' => 'python_course',
+                    'lessons' => [],
+                ],
+                [
+                    'name' => 'Курсы по дизайну',
+                    'descriptions' => 'Курсы по крутому дизайну',
+                    'code' => 'design_course',
+                    'lessons' => [],
+                ],
+            ],
+        ];
 
         foreach ($data['courses'] as $dataCourse) {
             $course = new Course();

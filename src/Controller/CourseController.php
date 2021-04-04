@@ -2,10 +2,18 @@
 
 namespace App\Controller;
 
+use App\DTO\Course as CourseDto;
+use App\DTO\Pay as PayDto;
+use App\DTO\Transaction as TransactionDto;
 use App\Entity\Course;
 use App\Entity\Lesson;
+use App\Exception\BillingUnavailableException;
+use App\Exception\FailureResponseException;
 use App\Form\CourseType;
 use App\Repository\CourseRepository;
+use App\Service\BillingClient;
+use DateInterval;
+use DateTime;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\IsGranted;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -17,15 +25,88 @@ use Symfony\Component\Routing\Annotation\Route;
  */
 class CourseController extends AbstractController
 {
+    private $billingClient;
+
+    public function __construct(BillingClient $billingClient)
+    {
+        $this->billingClient = $billingClient;
+    }
+
     /**
      * @Route("/", name="course_index", methods={"GET"})
      */
     public function index(CourseRepository $courseRepository): Response
     {
+        try {
+            /** @var CourseDto[] $coursesDto */
+            $coursesDto = $this->billingClient->listCourses();
+            /** @var TransactionDto[] $transactionsDto */
+            $transactionsDto = [];
+
+            // если ползователь авторизирован, то делаем запрос по транзакциям
+            if ($this->getUser()) {
+                $queryFilter = 'type=payment&skip_expired=1';
+                $transactionsDto = $this->billingClient->transactionHistory($queryFilter);
+            }
+
+            /** @var Course[] $courses */
+            $courses = $courseRepository->findBy([], ['id' => 'ASC']);
+
+            $infoPrices = []; // информация по ценам
+            foreach ($coursesDto as $courseDto) {
+                $key = $courseDto->getCode();
+                $infoPrices[$key] = $courseDto;
+            }
+
+            $infoPurchases = []; // информация о покупе(если была совершена)
+            foreach ($transactionsDto as &$transactionDto) {
+                // добавляем к времени 1 неделю(аренда курса)
+                $dateTime = $transactionDto->getCreatedAt();
+                if ($dateTime) {
+                    $newDateTime = (new DateTime($dateTime))->add(new DateInterval('P1W')); //  +1 неделя
+                    $transactionDto->setCreatedAt($newDateTime->format('Y-m-d T H:i:s'));
+                }
+                $key = $transactionDto->getCourseCode();
+                $infoPurchases[$key] = $transactionDto;
+            }
+        } catch (BillingUnavailableException $e) {
+            throw new \Exception($e->getMessage());
+        } catch (FailureResponseException $e) {
+            throw new \Exception($e->getMessage());
+        } catch (\Exception $e) {
+            throw new \Exception($e->getMessage());
+        }
+
         return $this->render(
             'course/index.html.twig',
-            ['courses' => $courseRepository->findBy([], ['id' => 'ASC'])]
+            [
+                'courses' => $courses,
+                'infoPrices' => $infoPrices,
+                'infoPurchases' => $infoPurchases,
+            ]
         );
+    }
+
+    /**
+     * @Route("/pay", name="course_pay", methods={"GET"})
+     * @IsGranted("IS_AUTHENTICATED_FULLY")
+     */
+    public function pay(Request $request): Response
+    {
+        $referer = $request->headers->get('referer');
+
+        $courseCode = $request->get('course_code');
+        try {
+            /** @var PayDto $payDto */
+            $payDto = $this->billingClient->payCourse($courseCode);
+            $this->addFlash('success', 'Успешное выполнение операции!');
+        } catch (BillingUnavailableException $e) {
+            throw new \Exception($e->getMessage());
+        } catch (FailureResponseException $e) {
+            $this->addFlash('error', $e->getMessage());
+        }
+
+        return $this->redirect($referer);
     }
 
     /**
@@ -60,9 +141,40 @@ class CourseController extends AbstractController
      */
     public function show(Course $course): Response
     {
+        try {
+            $codeCourse = $course->getCode();
+            /** @var CourseDto $courseDto */
+            $courseDto = $this->billingClient->oneCourse($codeCourse);
+
+            $queryFilter = "type=payment&course_code=$codeCourse&skip_expired=1";
+            /** @var TransactionDto[] $transactionsDto */
+            $transactionsDto = $this->billingClient->transactionHistory($queryFilter);
+
+            $infoPrices[$codeCourse] = $courseDto; // информация по ценам
+
+            // добавляем к времени 1 неделю(аренда курса)
+            if (0 < count($transactionsDto)) {
+                $dateTime = $transactionsDto[0]->getCreatedAt();
+                if ($dateTime) {
+                    $newDateTime = (new DateTime($dateTime))->add(new DateInterval('P1W')); //  +1 неделя
+                    $transactionsDto[0]->setCreatedAt($newDateTime->format('Y-m-d T H:i:s'));
+                }
+                $key = $transactionsDto[0]->getCourseCode();
+                $infoPurchases[$key] = $transactionsDto[0]; // информаация о покупке
+            }
+        } catch (BillingUnavailableException $e) {
+            throw new \Exception($e->getMessage());
+        } catch (FailureResponseException $e) {
+            throw new \Exception($e->getMessage());
+        } catch (\Exception $e) {
+            throw new \Exception($e->getMessage());
+        }
+
         return $this->render(
             'course/show.html.twig',
             [
+                'infoPrices' => $infoPrices,
+                'infoPurchases' => $infoPurchases ?? [],
                 'course' => $course,
                 'lessons' => $this->getDoctrine()
                     ->getRepository(Lesson::class)
