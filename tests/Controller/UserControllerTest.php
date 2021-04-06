@@ -55,15 +55,6 @@ class UserControllerTest extends AbstractTest
             'user@test.com' => $user,
             'admin@test.com' => $admin,
         ];
-
-        $this->historyTransactions = [
-            [
-                'type' => 'deposit',
-                'amount' => 200,
-                'courseCode' => null,
-                'createdAt' => '2000-01-22 UTC 00:00:00',
-            ],
-        ];
     }
 
     protected function getFixtures(): array
@@ -134,7 +125,16 @@ class UserControllerTest extends AbstractTest
         $this->assertResponseOk();
         self::assertEquals('/transactions', $client->getRequest()->getPathInfo());
 
-        foreach ($this->historyTransactions as $i => $transaction) {
+        $historyTransactions = [
+            [
+                'type' => 'deposit',
+                'amount' => 200,
+                'courseCode' => null,
+                'createdAt' => '2000-01-22 UTC 00:00:00',
+            ],
+        ];
+
+        foreach ($historyTransactions as $i => $transaction) {
             $crawlerTr = $crawler->filter('.tr-transaction')->eq($i);
             self::assertEquals(
                 $crawlerTr->filter('td')->eq(0)->text(),
@@ -184,6 +184,7 @@ class UserControllerTest extends AbstractTest
         self::assertNotNull($user);
         self::assertEquals($dataAccount->getUsername(), $user->getUsername());
         self::assertContains($dataAccount->getRoles()[0], $user->getRoles());
+
         return $user;
     }
 }

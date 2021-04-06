@@ -75,15 +75,23 @@ class BillingClientMock extends BillingClient
                 'type' => 'buy',
             ],
         ];
-        $transactionDtoStarting = new TransactionDto();
-        $transactionDtoStarting->setId(1);
-        $transactionDtoStarting->setType($this->typesTransaction[2]);
-        $transactionDtoStarting->setCreatedAt('2000-01-15');
-        $transactionDtoStarting->setAmount(200);
-        $transactionDtoStarting->setCourseCode(null);
+        $transactionDeposit = new TransactionDto();
+        $transactionDeposit->setId(1);
+        $transactionDeposit->setType($this->typesTransaction[2]);
+        $transactionDeposit->setCreatedAt('2000-01-22 UTC 00:00:00');
+        $transactionDeposit->setAmount(200);
+        $transactionDeposit->setCourseCode(null);
+
+        $transactionPayment = new TransactionDto();
+        $transactionPayment->setId(2);
+        $transactionPayment->setType($this->typesTransaction[1]);
+        $transactionPayment->setCreatedAt((new \DateTime())->format('Y-m-d T H:i:s'));
+        $transactionPayment->setAmount(50);
+        $transactionPayment->setCourseCode('deep_learning');
 
         $this->historyTransactions = [
-            $transactionDtoStarting,
+            $transactionDeposit,
+            $transactionPayment,
         ];
     }
 
@@ -117,14 +125,6 @@ class BillingClientMock extends BillingClient
 
             // если баланс позволяет купить
             if ($balance >= $price) {
-                $payDto = new PayDto();
-                $payDto->setSuccess(true);
-                $payDto->setCourseType($this->infoCourses[$course->getCode()]['type']);
-                $payDto->setExpiresAt((new \DateTime('+ 7 day'))->format('Y-m-d T H:i:s'));
-
-                // отнимаем цену из баланса
-                $this->arrUsers[$user->getEmail()]->setBalance($balance - $price);
-
                 // создаем транзакцию
                 $transactionDto = new TransactionDto();
                 $transactionDto->setId(1);
@@ -133,6 +133,14 @@ class BillingClientMock extends BillingClient
                 $transactionDto->setAmount($price);
                 $transactionDto->setCourseCode($codeCourse);
                 $this->historyTransactions[] = $transactionDto;
+
+                $payDto = new PayDto();
+                $payDto->setSuccess(true);
+                $payDto->setCourseType($this->infoCourses[$course->getCode()]['type']);
+                $payDto->setExpiresAt($this->getExpiresAt($transactionDto->getCreatedAt(), '7'));
+
+                // отнимаем цену из баланса
+                $this->arrUsers[$user->getEmail()]->setBalance($balance - $price);
 
                 return $payDto;
             }
@@ -184,7 +192,59 @@ class BillingClientMock extends BillingClient
 
     public function transactionHistory(string $query = ''): array
     {
-        return $this->historyTransactions;
+        if ('' === $query) {
+            return $this->historyTransactions;
+        }
+        $filters = explode('&', $query);
+
+        $typesQuery = [];
+        $valuesQuery = [];
+
+        foreach ($filters as $filter) {
+            $arr = explode('=', $filter);
+            $typesQuery[] = $arr[0];
+            $valuesQuery[$arr[0]] = $arr[1];
+        }
+        $responseTransactions = [];
+
+        if (in_array('skip_expired', $typesQuery, true)
+            && in_array('type', $typesQuery, true)
+            && in_array('course_code', $typesQuery, true)
+        ) {
+            foreach ($this->historyTransactions as $transaction) {
+                $createdAt = $transaction->getCreatedAt();
+                if ($valuesQuery['type'] === $transaction->getType()
+                    && $this->getExpiresAt($createdAt, '7') > (new \DateTime())->format('Y-m-d T H:i:s')
+                    && $valuesQuery['course_code'] === $transaction->getCourseCode()
+                ) {
+                    $responseTransactions[] = $transaction;
+                }
+            }
+
+            return $responseTransactions;
+        }
+
+        if (in_array('skip_expired', $typesQuery, true)
+            && in_array('type', $typesQuery, true)
+        ) {
+            foreach ($this->historyTransactions as $transaction) {
+                $createdAt = $transaction->getCreatedAt();
+                if ($valuesQuery['type'] === $transaction->getType()
+                    && $this->getExpiresAt($createdAt, '7') > (new \DateTime())->format('Y-m-d T H:i:s')
+                ) {
+                    $responseTransactions[] = $transaction;
+                }
+            }
+
+            return $responseTransactions;
+        }
+
+        return [];
+    }
+
+    private function getExpiresAt(string $dateTime, string $countDay): string
+    {
+        return (new \DateTime("$dateTime + $countDay day"))->format('Y-m-d T H:i:s');
     }
 
     public function current(): UserDto

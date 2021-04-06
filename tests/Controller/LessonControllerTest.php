@@ -21,6 +21,7 @@ class LessonControllerTest extends AbstractTest
     private $errorsForm;
     private $elementsForm;
     private $checkData;
+    private $codeCoursePayment;
 
     private $arrUsers;
 
@@ -150,6 +151,7 @@ class LessonControllerTest extends AbstractTest
         $this->billingApiVersion = 'v1';
         $this->urlCourses = '/courses';
         $this->urlLessons = '/lessons';
+        $this->codeCoursePayment = 'deep_learning';
     }
 
     private function serviceSubstitution(): void
@@ -177,7 +179,7 @@ class LessonControllerTest extends AbstractTest
         return [CourseFixtures::class];
     }
 
-    public function testLackOfAdminFunctionality()
+    public function testAccessFunctionalUser()
     {
         // авторизация под user
         $this->authorization($this->arrUsers['user@test.com']);
@@ -196,17 +198,22 @@ class LessonControllerTest extends AbstractTest
         $lessons = $em->getRepository(Lesson::class)->findAll();
         foreach ($lessons as $lesson) {
             /* @var Lesson $lesson */
-            $crawler = self::getClient()->request('GET', $this->urlLessons . '/' . $lesson->getId());
-            $this->assertResponseOk();
+            // купленный курс
+            if ($this->codeCoursePayment === $lesson->getCourse()->getCode()) {
+                $crawler = self::getClient()->request('GET', $this->urlLessons . '/' . $lesson->getId());
+                $this->assertResponseOk();
 
-            // проверка на отсутсвие кнопки
-            $button = $crawler->selectLink('Редактировать')->count();
-            self::assertEquals($button, 0);
+                // проверка на отсутсвие кнопки
+                $button = $crawler->selectLink('Редактировать')->count();
+                self::assertEquals($button, 0);
 
-            // проверка на отсутсвие кнопки
-            $button = $crawler->selectLink('Удалить')->count();
-            self::assertEquals($button, 0);
-
+                // проверка на отсутсвие кнопки
+                $button = $crawler->selectLink('Удалить')->count();
+                self::assertEquals($button, 0);
+            } else {
+                $crawler = self::getClient()->request('GET', $this->urlLessons . '/' . $lesson->getId());
+                $this->assertResponseForbidden();
+            }
             self::getClient()->request('GET', $this->urlLessons . '/' . $lesson->getId() . '/edit');
             $this->assertResponseForbidden();
 
@@ -215,10 +222,10 @@ class LessonControllerTest extends AbstractTest
         }
     }
 
-    public function testPageResponseOk()
+    public function testAccessFunctionalAdmin()
     {
         // авторизация под админом
-        $this->authorization($this->arrUsers['admin@test.com']);;
+        $this->authorization($this->arrUsers['admin@test.com']);
 
         /** @var EntityManagerInterface $em */
         $em = self::getEntityManager();
@@ -245,7 +252,7 @@ class LessonControllerTest extends AbstractTest
         }
     }
 
-    public function testPageResponseNotFound(): void
+    public function tesNotExistentPage(): void
     {
         // авторизация под админом
         $this->authorization($this->arrUsers['admin@test.com']);

@@ -232,7 +232,7 @@ class CourseControllerTest extends AbstractTest
         self::assertEquals($balance, 'Баланс: ' . $this->arrUsers[$authUser->getEmail()]->getBalance());
 
         // проверка транзакций после добавления
-        $linkTransactions= self::getClient()->getCrawler()->selectLink('История транзакций')->link();
+        $linkTransactions = self::getClient()->getCrawler()->selectLink('История транзакций')->link();
         $crawler = self::getClient()->click($linkTransactions);
         $this->assertResponseOk();
 
@@ -242,6 +242,11 @@ class CourseControllerTest extends AbstractTest
                 'type' => 'deposit',
                 'amount' => 200,
                 'courseCode' => null,
+            ],
+            [
+                'type' => 'payment',
+                'amount' => 50,
+                'courseCode' => 'deep_learning',
             ],
             [
                 'type' => 'payment',
@@ -309,8 +314,7 @@ class CourseControllerTest extends AbstractTest
         /// Конец 2 теста <--
     }
 
-    /* Проверка на закрытость админиского функционала */
-    public function testLackOfAdminFunctionality(): void
+    public function testAccessFunctionUser(): void
     {
         // авторизация под user
         $this->authorization($this->arrUsers['user@test.com']);
@@ -343,7 +347,7 @@ class CourseControllerTest extends AbstractTest
             self::assertEquals($button, 0);
 
             // проверка на отсутсвие кнопки
-            $button = $crawler->selectLink('Удалить')->count();
+            $button = $crawler->selectButton('Удалить')->count();
             self::assertEquals($button, 0);
 
             self::getClient()->request('GET', $this->urlBase . '/' . $course->getId() . '/edit');
@@ -354,7 +358,7 @@ class CourseControllerTest extends AbstractTest
         }
     }
 
-    public function testPageResponseOk(): void
+    public function testAccessFunctionAdmin(): void
     {
         // авторизация под админом
         $this->authorization($this->arrUsers['admin@test.com']);
@@ -374,6 +378,18 @@ class CourseControllerTest extends AbstractTest
             self::getClient()->request('GET', $this->urlBase . '/' . $course->getId());
             $this->assertResponseOk();
 
+            $crawler = self::getClient()->getCrawler();
+            // проверка на отсутсвие кнопки
+            $button = $crawler->selectLink('Добавить урок')->count();
+            self::assertEquals($button, 1);
+
+            // проверка на отсутсвие кнопки
+            $button = $crawler->selectLink('Редактировать курс')->count();
+            self::assertEquals($button, 1);
+
+            $button = $crawler->selectButton('Удалить')->count();
+            self::assertEquals($button, 1);
+
             self::getClient()->request('DELETE', $this->urlBase . '/' . $course->getId());
             $this->assertResponseRedirect();
 
@@ -382,7 +398,7 @@ class CourseControllerTest extends AbstractTest
         }
     }
 
-    public function testPageResponseNotFound(): void
+    public function testNotExistentPage(): void
     {
         // авторизация под админом
         $this->authorization($this->arrUsers['admin@test.com']);
@@ -747,6 +763,7 @@ class CourseControllerTest extends AbstractTest
         self::assertNotNull($user);
         self::assertEquals($dataAccount->getUsername(), $user->getUsername());
         self::assertContains($dataAccount->getRoles()[0], $user->getRoles());
+
         return $user;
     }
 }

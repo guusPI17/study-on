@@ -12,10 +12,10 @@ use App\Form\LessonType;
 use App\Service\BillingClient;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\IsGranted;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
-use Symfony\Component\Security\Core\Exception\AccessDeniedException;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Component\Security\Core\Exception\AccessDeniedException;
 
 /**
  * @Route("/lessons")
@@ -77,23 +77,25 @@ class LessonController extends AbstractController
      */
     public function show(Lesson $lesson): Response
     {
-        try {
-            $codeCourse = $lesson->getCourse()->getCode();
-            /** @var CourseDto $courseDto */
-            $courseDto = $this->billingClient->oneCourse($codeCourse);
-            if ('free' !== $courseDto->getType()) {
-                $queryFilter = "type=payment&course_code=$codeCourse&skip_expired=1";
-                /** @var TransactionDto[] $transactionsDto */
-                $transactionsDto = $this->billingClient->transactionHistory($queryFilter);
-
-                if (0 == count($transactionsDto)) {
-                    throw new AccessDeniedException('Данный урок вам не доступен!');
+        // админу не требуется покупать курс для просмотра/редактирования/удаления уроков
+        if (!$this->isGranted('ROLE_SUPER_ADMIN')) {
+            try {
+                $codeCourse = $lesson->getCourse()->getCode();
+                /** @var CourseDto $courseDto */
+                $courseDto = $this->billingClient->oneCourse($codeCourse);
+                if ('free' !== $courseDto->getType()) {
+                    $queryFilter = "type=payment&course_code=$codeCourse&skip_expired=1";
+                    /** @var TransactionDto[] $transactionsDto */
+                    $transactionsDto = $this->billingClient->transactionHistory($queryFilter);
+                    if (0 == count($transactionsDto)) {
+                        throw new AccessDeniedException('Данный урок вам не доступен!');
+                    }
                 }
+            } catch (BillingUnavailableException $e) {
+                throw new \Exception($e->getMessage());
+            } catch (FailureResponseException $e) {
+                throw new \Exception($e->getMessage());
             }
-        } catch (BillingUnavailableException $e) {
-            throw new \Exception($e->getMessage());
-        } catch (FailureResponseException $e) {
-            throw new \Exception($e->getMessage());
         }
 
         return $this->render(

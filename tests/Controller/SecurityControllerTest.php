@@ -3,8 +3,8 @@
 namespace App\Tests\Controller;
 
 use App\DataFixtures\CourseFixtures;
-use App\Security\User;
 use App\DTO\User as UserDto;
+use App\Security\User;
 use App\Tests\AbstractTest;
 use App\Tests\Mock\BillingClientMock;
 use Symfony\Component\HttpFoundation\RedirectResponse;
