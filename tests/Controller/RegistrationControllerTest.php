@@ -44,6 +44,7 @@ class RegistrationControllerTest extends AbstractTest
         self::getClient()->getContainer()->set(
             'App\Service\BillingClient',
             new BillingClientMock(
+                self::$container->get('doctrine'),
                 $this->billingUrlBase,
                 $this->billingApiVersion,
                 $this->httpClient,
@@ -73,10 +74,10 @@ class RegistrationControllerTest extends AbstractTest
         $form['registration_form[username]'] = $email;
         $form['registration_form[password][first]'] = $password;
         $form['registration_form[password][second]'] = $password;
-        $crawler = $client->submit($form);
+        $client->submit($form);
         $this->assertResponseRedirect();
 
-        // редирект на /courses
+        // редирект на /courses/
         $crawler = $client->followRedirect();
         $this->assertResponseOk();
         self::assertEquals('/courses/', $client->getRequest()->getPathInfo());

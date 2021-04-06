@@ -135,7 +135,6 @@ class BillingClient
 
         /** @var UserDto $userDto */
         $userDto = $this->serializer->deserialize($response, UserDto::class, 'json');
-
         return $userDto;
     }
 

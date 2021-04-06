@@ -31,7 +31,7 @@
     <div class="container" id="courses">
     {% for course in courses %}
         <div class="row course border border-dark shadow p-3 mb-5 bg-white">
-            <div class="col text-center p-0">
+            <div id="course-{{ course.code }}" class="col text-center p-0">
                 <h3>
                     {{ course.name }}
                 </h3>
@@ -54,17 +54,17 @@
                             {% include('course/pay.html.twig') with {'course': course, 'infoPrices': infoPrices} %}
 
                             {% if 'buy' == infoPrices[course.code].type %}
-                                <button data-toggle="modal" data-target="#modalCenter-{{ course.code }}">
+                                <a role="button" class="btn btn-secondary" data-toggle="modal" data-target="#modalCenter-{{ course.code }}">
                                     Купить за {{ infoPrices[course.code].price ~ 'р.' }}
-                                </button>
+                                </a>
                             {% elseif 'rent' == infoPrices[course.code].type %}
-                                <button data-toggle="modal" data-target="#modalCenter-{{ course.code }}">
+                                <a role="button" class="btn btn-secondary" data-toggle="modal" data-target="#modalCenter-{{ course.code }}">
                                     Арендовать за {{ infoPrices[course.code].price ~ 'р.' }}
-                                </button>
+                                </a>
                             {% else %}
-                                <button data-toggle="modal" data-target="#modalCenter-{{ course.code }}">
+                                <a role="button" class="btn btn-secondary" data-toggle="modal" data-target="#modalCenter-{{ course.code }}">
                                     Добавить бесплатно
-                                </button>
+                                </a>
                             {% endif %}
                         {% endif %}
                     </div>

@@ -26,7 +26,6 @@ class User implements UserInterface
         $user->setRoles($decodingJwt->getRoles());
         $user->setApiToken($userDto->getToken());
         $user->setRefreshToken($userDto->getRefreshToken());
-
         return $user;
     }
 

@@ -88,7 +88,6 @@ class UserProvider implements UserProviderInterface, PasswordUpgraderInterface
                 throw new \Exception($e->getMessage());
             }
         }
-
         return $user;
     }
 

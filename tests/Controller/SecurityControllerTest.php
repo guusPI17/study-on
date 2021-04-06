@@ -4,17 +4,16 @@ namespace App\Tests\Controller;
 
 use App\DataFixtures\CourseFixtures;
 use App\Security\User;
+use App\DTO\User as UserDto;
 use App\Tests\AbstractTest;
 use App\Tests\Mock\BillingClientMock;
 use Symfony\Component\HttpFoundation\RedirectResponse;
-use Symfony\Component\Security\Core\Authentication\Token\RememberMeToken;
 
 class SecurityControllerTest extends AbstractTest
 {
     private $urlBase;
 
-    private $dataUser;
-    private $dataAdmin;
+    private $arrUsers;
 
     private $billingUrlBase;
     private $billingApiVersion;
@@ -32,15 +31,28 @@ class SecurityControllerTest extends AbstractTest
         $this->billingUrlBase = 'billing.study-on.local';
         $this->billingApiVersion = 'v1';
         $this->urlBase = '/login';
-        $this->dataAdmin = [
-            'email' => 'admin@test.com',
-            'password' => 'admin@test.com',
-            'roles' => 'ROLE_SUPER_ADMIN',
-        ];
-        $this->dataUser = [
-            'email' => 'user@test.com',
-            'password' => 'user@test.com',
-            'roles' => 'ROLE_USER',
+
+        $user = new UserDto();
+        $user->setUsername('user@test.com');
+        $user->setPassword('user@test.com');
+        $user->setToken('header.eyJpYXQiOjE2MTY2ODA4MDIsImV4cCI6MTYxNjY4NDQwM
+        iwicm9sZXMiOlsiUk9MRV9VU0VSIl0sInVzZXJuYW1lIjoidXNlckB0ZXN0LmNvbSJ9.signature');
+        $user->setRefreshToken('refresh_token_user');
+        $user->setRoles(['ROLE_USER']);
+        $user->setBalance(200);
+
+        $admin = new UserDto();
+        $admin->setUsername('admin@test.com');
+        $admin->setPassword('admin@test.com');
+        $admin->setToken('header.eyJpYXQiOjE2MTY2ODEzMTEsImV4cCI6MTYxNjY4NDkxMSwicm9sZXMiOls
+        iUk9MRV9TVVBFUl9BRE1JTiIsIlJPTEVfVVNFUiJdLCJ1c2VybmFtZSI6ImFkbWluQHRlc3QuY29tIn0.signature');
+        $admin->setRefreshToken('refresh_token_admin');
+        $admin->setRoles(['ROLE_SUPER_ADMIN']);
+        $admin->setBalance(200);
+
+        $this->arrUsers = [
+            'user@test.com' => $user,
+            'admin@test.com' => $admin,
         ];
     }
 
@@ -58,11 +70,13 @@ class SecurityControllerTest extends AbstractTest
         self::getClient()->getContainer()->set(
             'App\Service\BillingClient',
             new BillingClientMock(
+                self::$container->get('doctrine'),
                 $this->billingUrlBase,
                 $this->billingApiVersion,
                 $this->httpClient,
                 $this->serializer,
-                $this->security
+                $this->security,
+                $this->arrUsers
             )
         );
     }
@@ -73,33 +87,19 @@ class SecurityControllerTest extends AbstractTest
         $this->serviceSubstitution();
         $client = self::getClient();
 
-        // проверка перехода на страницу авторизации (/login)
-        $crawler = $client->request('GET', $this->urlBase);
-        $this->assertResponseOk();
-        self::assertEquals($this->urlBase, $client->getRequest()->getPathInfo());
+        foreach ($this->arrUsers as $i => $value) {
+            // проверка перехода на страницу авторизации (/login)
+            $crawler = $client->request('GET', $this->urlBase);
+            $this->assertResponseOk();
+            self::assertEquals($this->urlBase, $client->getRequest()->getPathInfo());
 
-        // данные разных пользователей
-        $dataAccounts = [
-            $this->dataAdmin,
-            $this->dataUser,
-        ];
-        foreach ($dataAccounts as $i => $value) {
             // работа с формой
             $form = $crawler->selectButton('Войти')->form();
-            $form['email'] = $value['email'];
-            $form['password'] = $value['password'];
-            $form['_remember_me'] = true;
-            $crawler = $client->submit($form);
+            $form['email'] = $value->getUsername();
+            $form['password'] = $value->getPassword();
+            $client->submit($form);
 
-            // только во время 2-ой и более авторизации видит редирект на /
-            if ($i > 0) {
-                // редирект на /
-                $crawler = $client->followRedirect();
-                $this->assertResponseRedirect();
-                self::assertEquals('/', $client->getRequest()->getPathInfo());
-            }
-
-            // редирект на /course
+            // редирект на /courses/
             $crawler = $client->followRedirect();
             $this->assertResponseOk();
             self::assertEquals('/courses/', $client->getRequest()->getPathInfo());
@@ -108,14 +108,8 @@ class SecurityControllerTest extends AbstractTest
             /** @var User $user */
             $user = $this->security->getUser();
             self::assertNotNull($user);
-            self::assertEquals($value['email'], $user->getUsername());
-            self::assertContains($value['roles'], $user->getRoles());
-
-            /*// перезагружаем браузер
-            $crawler = self::getClient()->reload();
-
-            // проверка класса токена
-            self::assertInstanceOf(RememberMeToken::class, $this->security->getToken());*/
+            self::assertEquals($value->getUsername(), $user->getUsername());
+            self::assertContains($value->getRoles()[0], $user->getRoles());
 
             // разлогинивание аккаунта /logout
             $linkLogout = $crawler->selectLink('Выход')->link();
@@ -128,10 +122,10 @@ class SecurityControllerTest extends AbstractTest
             $this->assertResponseRedirect();
             self::assertEquals('/', $client->getRequest()->getPathInfo());
 
-            // редирект на /login
+            // редирект на /courses/
             $crawler = $client->followRedirect();
             $this->assertResponseOk();
-            self::assertEquals('/login', $client->getRequest()->getPathInfo());
+            self::assertEquals('/courses/', $client->getRequest()->getPathInfo());
         }
     }
 
@@ -150,12 +144,10 @@ class SecurityControllerTest extends AbstractTest
             [
                 'email' => 'user@test.com',
                 'password' => '123',
-                'rememberMe' => true,
             ],
             [
                 'email' => 'user@test.com',
                 'password' => '123456',
-                'rememberMe' => false,
             ],
         ];
         $errorForm = [
@@ -168,7 +160,6 @@ class SecurityControllerTest extends AbstractTest
             $form = $crawler->selectButton('Войти')->form();
             $form['email'] = $value['email'];
             $form['password'] = $value['password'];
-            $form['_remember_me'] = $value['rememberMe'];
             $crawler = $client->submit($form);
 
             // проверка ошибки

@@ -3,6 +3,7 @@
 namespace App\Tests\Controller;
 
 use App\DataFixtures\CourseFixtures;
+use App\DTO\User as UserDto;
 use App\Security\User;
 use App\Tests\AbstractTest;
 use App\Tests\Mock\BillingClientMock;
@@ -11,8 +12,7 @@ class UserControllerTest extends AbstractTest
 {
     private $urlBase;
 
-    private $dataAdmin;
-    private $dataUser;
+    private $arrUsers;
 
     private $billingUrlBase;
     private $billingApiVersion;
@@ -20,6 +20,8 @@ class UserControllerTest extends AbstractTest
     private $httpClient;
     private $serializer;
     private $security;
+
+    private $historyTransactions;
 
     protected function setUp(): void
     {
@@ -31,17 +33,36 @@ class UserControllerTest extends AbstractTest
         $this->billingApiVersion = 'v1';
         $this->urlBase = '/profile';
 
-        $this->dataAdmin = [
-            'email' => 'admin@test.com',
-            'password' => 'admin@test.com',
-            'roles' => 'ROLE_SUPER_ADMIN',
-            'balance' => 0,
+        $user = new UserDto();
+        $user->setUsername('user@test.com');
+        $user->setPassword('user@test.com');
+        $user->setToken('header.eyJpYXQiOjE2MTY2ODA4MDIsImV4cCI6MTYxNjY4NDQwM
+        iwicm9sZXMiOlsiUk9MRV9VU0VSIl0sInVzZXJuYW1lIjoidXNlckB0ZXN0LmNvbSJ9.signature');
+        $user->setRefreshToken('refresh_token_user');
+        $user->setRoles(['ROLE_USER']);
+        $user->setBalance(200);
+
+        $admin = new UserDto();
+        $admin->setUsername('admin@test.com');
+        $admin->setPassword('admin@test.com');
+        $admin->setToken('header.eyJpYXQiOjE2MTY2ODEzMTEsImV4cCI6MTYxNjY4NDkxMSwicm9sZXMiOls
+        iUk9MRV9TVVBFUl9BRE1JTiIsIlJPTEVfVVNFUiJdLCJ1c2VybmFtZSI6ImFkbWluQHRlc3QuY29tIn0.signature');
+        $admin->setRefreshToken('refresh_token_admin');
+        $admin->setRoles(['ROLE_SUPER_ADMIN']);
+        $admin->setBalance(200);
+
+        $this->arrUsers = [
+            'user@test.com' => $user,
+            'admin@test.com' => $admin,
         ];
-        $this->dataUser = [
-            'email' => 'user@test.com',
-            'password' => 'user@test.com',
-            'roles' => 'ROLE_USER',
-            'balance' => 100,
+
+        $this->historyTransactions = [
+            [
+                'type' => 'deposit',
+                'amount' => 200,
+                'courseCode' => null,
+                'createdAt' => '2000-01-22 UTC 00:00:00',
+            ],
         ];
     }
 
@@ -59,52 +80,21 @@ class UserControllerTest extends AbstractTest
         self::getClient()->getContainer()->set(
             'App\Service\BillingClient',
             new BillingClientMock(
+                self::$container->get('doctrine'),
                 $this->billingUrlBase,
                 $this->billingApiVersion,
                 $this->httpClient,
                 $this->serializer,
-                $this->security
+                $this->security,
+                $this->arrUsers
             )
         );
     }
 
-    /**
-     * Авторизация
-     */
-    private function authorization($dataAccount)
-    {
-        // подмена сервиса
-        $this->serviceSubstitution();
-        $client = self::getClient();
-
-        // проверка перехода на страницу авторизации (/login)
-        $crawler = $client->request('GET', '/login');
-        $this->assertResponseOk();
-        self::assertEquals('/login', $client->getRequest()->getPathInfo());
-
-        // работа с формой
-        $form = $crawler->selectButton('Войти')->form();
-        $form['email'] = $dataAccount['email'];
-        $form['password'] = $dataAccount['password'];
-        $crawler = $client->submit($form);
-
-        // редирект на /course
-        $crawler = $client->followRedirect();
-        $this->assertResponseOk();
-        self::assertEquals('/courses/', $client->getRequest()->getPathInfo());
-
-        // проверка авторизированного пользователя
-        /** @var User $user */
-        $user = $this->security->getUser();
-        self::assertNotNull($user);
-        self::assertEquals($dataAccount['email'], $user->getUsername());
-        self::assertContains($dataAccount['roles'], $user->getRoles());
-    }
-
-    public function testCurrent(): void
+    public function testProfile(): void
     {
         // авторизация
-        $this->authorization($this->dataUser);
+        $this->authorization($this->arrUsers['user@test.com']);
         $client = self::getClient();
 
         // переход в профиль
@@ -119,8 +109,81 @@ class UserControllerTest extends AbstractTest
         $role = $crawler->filter('#role')->text();
         $balance = $crawler->filter('#balance')->text();
 
-        self::assertEquals($email, 'E-mail: ' . $this->dataUser['email']);
+        self::assertEquals($email, 'E-mail: ' . $this->arrUsers['user@test.com']->getUsername());
         self::assertEquals($role, 'Роль: ' . 'Пользователь');
-        self::assertEquals($balance, 'Баланс: ' . $this->dataUser['balance']);
+        self::assertEquals($balance, 'Баланс: ' . $this->arrUsers['user@test.com']->getBalance());
+    }
+
+    public function testTransactions(): void
+    {
+        // авторизация
+        $this->authorization($this->arrUsers['user@test.com']);
+        $client = self::getClient();
+
+        // переход в профиль
+        $crawler = $client->getCrawler();
+        $linkProfile = $crawler->selectLink('Профиль')->link();
+        $crawler = $client->click($linkProfile);
+        $this->assertResponseOk();
+        self::assertEquals($this->urlBase, $client->getRequest()->getPathInfo());
+
+        // переход в транзакции
+        $linkTransactions = $crawler->selectLink('История транзакций')->link();
+        $crawler = self::getClient()->click($linkTransactions);
+
+        $this->assertResponseOk();
+        self::assertEquals('/transactions', $client->getRequest()->getPathInfo());
+
+        foreach ($this->historyTransactions as $i => $transaction) {
+            $crawlerTr = $crawler->filter('.tr-transaction')->eq($i);
+            self::assertEquals(
+                $crawlerTr->filter('td')->eq(0)->text(),
+                'deposit' === $transaction['type'] ? 'Пополнение' : 'Списание'
+            );
+            self::assertEquals(
+                $crawlerTr->filter('td')->eq(1)->text(),
+                $transaction['amount']
+            );
+            self::assertEquals(
+                $crawlerTr->filter('td')->eq(2)->text(),
+                $transaction['courseCode'] ? 'Покупка курса ' . $transaction['courseCode'] : 'Пополнение счета'
+            );
+            self::assertEquals(
+                $crawlerTr->filter('td')->eq(3)->text(),
+                $transaction['createdAt']
+            );
+        }
+    }
+
+    private function authorization(UserDto $dataAccount): User
+    {
+        // подмена сервиса
+        $this->serviceSubstitution();
+        $client = self::getClient();
+
+        // проверка перехода на страницу авторизации (/login)
+        $crawler = $client->request('GET', '/login');
+        $this->assertResponseOk();
+        self::assertEquals('/login', $client->getRequest()->getPathInfo());
+
+        // работа с формой
+        $form = $crawler->selectButton('Войти')->form();
+        $form['email'] = $dataAccount->getUsername();
+        $form['password'] = $dataAccount->getPassword();
+        $client->submit($form);
+
+        // редирект на /courses/
+        $crawler = $client->followRedirect();
+        $this->assertResponseOk();
+        self::assertEquals('/courses/', $client->getRequest()->getPathInfo());
+
+        // проверка авторизированного пользователя
+        /** @var User $user */
+        $user = $this->security->getUser();
+
+        self::assertNotNull($user);
+        self::assertEquals($dataAccount->getUsername(), $user->getUsername());
+        self::assertContains($dataAccount->getRoles()[0], $user->getRoles());
+        return $user;
     }
 }

@@ -43,7 +43,7 @@ class CourseController extends AbstractController
             /** @var TransactionDto[] $transactionsDto */
             $transactionsDto = [];
 
-            // если ползователь авторизирован, то делаем запрос по транзакциям
+            // если пользователь авторизирован, то делаем запрос по транзакциям
             if ($this->getUser()) {
                 $queryFilter = 'type=payment&skip_expired=1';
                 $transactionsDto = $this->billingClient->transactionHistory($queryFilter);

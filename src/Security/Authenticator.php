@@ -86,7 +86,6 @@ class Authenticator extends AbstractFormLoginAuthenticator
         } catch (BillingUnavailableException $e) {
             throw new CustomUserMessageAuthenticationException($e->getMessage());
         }
-
         return $user;
     }
 
