@@ -53,16 +53,31 @@ class BillingClient
 
     public function payCourse(string $codeCourse): PayDto
     {
-        /** @var User $user */
-        $user = $this->security->getUser();
-
-        $headers['Content-Type'] = 'application/json';
-        if ($user) {
-            $headers['Authorization'] = 'Bearer ' . $user->getApiToken();
-        }
-        $response = $this->apiRequest("/courses/$codeCourse/pay", 'POST', $headers);
+        $response = $this->apiRequest("/courses/$codeCourse/pay", 'POST', $this->defaultHeaderJwt());
 
         return $this->serializer->deserialize($response, PayDto::class, 'json');
+    }
+
+    public function newCourses(CourseDto $courseDto): ResponseDto
+    {
+        $dataSerialize = $this->serializer->serialize($courseDto, 'json');
+        $response = $this->apiRequest('/courses/new', 'POST', $this->defaultHeaderJwt(), $dataSerialize);
+
+        return $this->serializer->deserialize($response, ResponseDto::class, 'json');
+    }
+
+    public function editCourses(CourseDto $courseDto): ResponseDto
+    {
+        $codeCourse = $courseDto->getCode();
+        $dataSerialize = $this->serializer->serialize($courseDto, 'json');
+        $response = $this->apiRequest(
+            "/courses/$codeCourse/edit",
+            'POST',
+            $this->defaultHeaderJwt(),
+            $dataSerialize
+        );
+
+        return $this->serializer->deserialize($response, ResponseDto::class, 'json');
     }
 
     public function listCourses(): array
@@ -75,42 +90,21 @@ class BillingClient
 
     public function oneCourse(string $codeCourse): CourseDto
     {
-        /** @var User $user */
-        $user = $this->security->getUser();
-
-        $headers['Content-Type'] = 'application/json';
-        if ($user) {
-            $headers['Authorization'] = 'Bearer ' . $user->getApiToken();
-        }
-        $response = $this->apiRequest("/courses/$codeCourse", 'GET', $headers);
+        $response = $this->apiRequest("/courses/$codeCourse", 'GET', $this->defaultHeaderJwt());
 
         return $this->serializer->deserialize($response, CourseDto::class, 'json');
     }
 
     public function transactionHistory(string $query = ''): array
     {
-        /** @var User $user */
-        $user = $this->security->getUser();
-
-        $headers['Content-Type'] = 'application/json';
-        if ($user) {
-            $headers['Authorization'] = 'Bearer ' . $user->getApiToken();
-        }
-        $response = $this->apiRequest("/transactions/filter?$query", 'GET', $headers);
+        $response = $this->apiRequest("/transactions/filter?$query", 'GET', $this->defaultHeaderJwt());
 
         return $this->serializer->deserialize($response, 'array<App\DTO\Transaction>', 'json');
     }
 
     public function current(): UserDto
     {
-        /** @var User $user */
-        $user = $this->security->getUser();
-
-        $headers['Content-Type'] = 'application/json';
-        if ($user) {
-            $headers['Authorization'] = 'Bearer ' . $user->getApiToken();
-        }
-        $response = $this->apiRequest('/users/current', 'GET', $headers);
+        $response = $this->apiRequest('/users/current', 'GET', $this->defaultHeaderJwt());
 
         return $this->serializer->deserialize($response, UserDto::class, 'json');
     }
@@ -137,6 +131,18 @@ class BillingClient
         $userDto = $this->serializer->deserialize($response, UserDto::class, 'json');
 
         return $userDto;
+    }
+
+    private function defaultHeaderJwt(): array
+    {
+        /** @var User $user */
+        $user = $this->security->getUser();
+        $headers['Content-Type'] = 'application/json';
+        if ($user) {
+            $headers['Authorization'] = 'Bearer ' . $user->getApiToken();
+        }
+
+        return $headers;
     }
 
     private function apiRequest(string $endUrl, string $method, array $headers = [], string $body = null): string

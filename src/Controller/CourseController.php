@@ -120,9 +120,38 @@ class CourseController extends AbstractController
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
-            $entityManager = $this->getDoctrine()->getManager();
-            $entityManager->persist($course);
-            $entityManager->flush();
+            try {
+                $courseDto = new CourseDto();
+                $courseDto->setCode($form->get('code')->getData());
+                $typeCourse = $form->get('type')->getData();
+                $courseDto->setType($typeCourse);
+
+                if ('free' === $typeCourse) {
+                    $courseDto->setPrice(0);
+                } else {
+                    $courseDto->setPrice($form->get('price')->getData());
+                }
+                $courseDto->setTitle($form->get('name')->getData());
+
+                // запрос к билинг сервису
+                $responseDto = $this->billingClient->newCourses($courseDto);
+
+                $entityManager = $this->getDoctrine()->getManager();
+                $entityManager->persist($course);
+                $entityManager->flush();
+            } catch (FailureResponseException $e) {
+                return $this->render('course/new.html.twig', [
+                    'course' => $course,
+                    'form' => $form->createView(),
+                    'errors' => $e->getMessage(),
+                ]);
+            } catch (BillingUnavailableException $e) {
+                return $this->render('course/new.html.twig', [
+                    'course' => $course,
+                    'form' => $form->createView(),
+                    'errors' => $e->getMessage(),
+                ]);
+            }
 
             return $this->redirectToRoute('course_index');
         }
@@ -192,11 +221,60 @@ class CourseController extends AbstractController
      */
     public function edit(Request $request, Course $course): Response
     {
-        $form = $this->createForm(CourseType::class, $course);
+        $codeCourse = $course->getCode();
+        try {
+            // данные с билинга по курсу
+            /** @var CourseDto $courseDto */
+            $courseDto = $this->billingClient->oneCourse($codeCourse);
+        } catch (BillingUnavailableException $e) {
+            throw new \Exception($e->getMessage());
+        } catch (FailureResponseException $e) {
+            throw new \Exception($e->getMessage());
+        } catch (\Exception $e) {
+            throw new \Exception($e->getMessage());
+        }
+
+        $form = $this->createForm(
+            CourseType::class,
+            $course,
+            [
+                'price' => $courseDto->getPrice(),
+                'type' => $courseDto->getType(),
+            ]
+        );
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
-            $this->getDoctrine()->getManager()->flush();
+            try {
+                $courseDto = new CourseDto();
+                $courseDto->setCode($form->get('code')->getData());
+                $typeCourse = $form->get('type')->getData();
+                $courseDto->setType($typeCourse);
+
+                if ('free' === $typeCourse) {
+                    $courseDto->setPrice(0);
+                } else {
+                    $courseDto->setPrice($form->get('price')->getData());
+                }
+                $courseDto->setTitle($form->get('name')->getData());
+
+                // запрос к билинг сервису
+                $responseDto = $this->billingClient->editCourses($courseDto);
+
+                $this->getDoctrine()->getManager()->flush();
+            } catch (FailureResponseException $e) {
+                return $this->render('course/edit.html.twig', [
+                    'course' => $course,
+                    'form' => $form->createView(),
+                    'errors' => $e->getMessage(),
+                ]);
+            } catch (BillingUnavailableException $e) {
+                return $this->render('course/edit.html.twig', [
+                    'course' => $course,
+                    'form' => $form->createView(),
+                    'errors' => $e->getMessage(),
+                ]);
+            }
 
             return $this->redirectToRoute('course_show', ['id' => $course->getId()]);
         }

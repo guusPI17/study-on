@@ -11,6 +11,21 @@
 
     <h1 class="center-h1">{{ course.name }}</h1>
 
+    <div class="container">
+        <div class="row">
+            <div class="col"></div>
+            <div class="col-8">
+                {% if errors is defined %}
+                    <div class="alert alert-danger">
+                        {{ errors }}
+                    </div>
+                {% endif %}
+            </div>
+            <div class="col"></div>
+        </div>
+    </div>
+
+
     {{ include('course/_form.html.twig', {'button_label': 'Обновить'}) }}
 
     <div class="container">

@@ -21,6 +21,11 @@ class Response
      */
     private $message;
 
+    /**
+     * @Serializer\Type("string")
+     */
+    private $success;
+
     public function getError(): ?array
     {
         return $this->error;
@@ -49,5 +54,15 @@ class Response
     public function setMessage(string $message): void
     {
         $this->message = $message;
+    }
+
+    public function getSuccess(): string
+    {
+        return $this->success;
+    }
+
+    public function setSuccess(string $success): void
+    {
+        $this->success = $success;
     }
 }

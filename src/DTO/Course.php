@@ -21,6 +21,11 @@ class Course
      */
     private $price;
 
+    /**
+     * @Serializer\Type("string")
+     */
+    private $title;
+
     public function getCode(): string
     {
         return $this->code;
@@ -49,5 +54,15 @@ class Course
     public function setPrice(?float $price): void
     {
         $this->price = $price;
+    }
+
+    public function getTitle(): ?string
+    {
+        return $this->price;
+    }
+
+    public function setTitle(string $title): void
+    {
+        $this->title = $title;
     }
 }
