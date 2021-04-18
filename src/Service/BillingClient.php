@@ -66,9 +66,8 @@ class BillingClient
         return $this->serializer->deserialize($response, ResponseDto::class, 'json');
     }
 
-    public function editCourses(CourseDto $courseDto): ResponseDto
+    public function editCourses(string $codeCourse, CourseDto $courseDto): ResponseDto
     {
-        $codeCourse = $courseDto->getCode();
         $dataSerialize = $this->serializer->serialize($courseDto, 'json');
         $response = $this->apiRequest(
             "/courses/$codeCourse/edit",

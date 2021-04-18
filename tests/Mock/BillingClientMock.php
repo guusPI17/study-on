@@ -13,6 +13,7 @@ use App\Security\User;
 use App\Service\BillingClient;
 use Doctrine\Bundle\DoctrineBundle\Registry;
 use JMS\Serializer\SerializerInterface;
+use PHPUnit\Util\Exception;
 use Symfony\Component\Security\Core\Security;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 
@@ -106,6 +107,51 @@ class BillingClientMock extends BillingClient
                 return $userDto;
             }
         }
+        throw new Exception();
+    }
+
+    public function newCourses(CourseDto $courseDto): ResponseDto
+    {
+        $responseDto = new ResponseDto();
+        if (array_key_exists($courseDto->getCode(), $this->infoCourses)) {
+            $responseDto->setCode(500);
+            $responseDto->setMessage('Данный код курса уже существует');
+
+            return $responseDto;
+        }
+        // добавление новоого элемента в список
+        $this->infoCourses[$courseDto->getCode()] = [
+            'price' => $courseDto->getPrice(),
+            'type' => $courseDto->getType(),
+        ];
+        $responseDto->setSuccess(true);
+
+        return $responseDto;
+    }
+
+    public function editCourses(string $codeCourse, CourseDto $courseDto): ResponseDto
+    {
+        $responseDto = new ResponseDto();
+        if (!array_key_exists($codeCourse, $this->infoCourses)) {
+            $responseDto->setCode(404);
+            $responseDto->setMessage('Курс для изменения не найден');
+
+            return $responseDto;
+        }
+        if (array_key_exists($courseDto->getCode(), $this->infoCourses)) {
+            $responseDto->setCode(500);
+            $responseDto->setMessage('Данный код курса уже существует');
+
+            return $responseDto;
+        }
+        // изменение старого элемента из списка
+        unset($this->infoCourses[$codeCourse]);
+        $this->infoCourses[$courseDto->getCode()] = [
+            'price' => $courseDto->getPrice(),
+            'type' => $courseDto->getType(),
+        ];
+
+        return $responseDto;
     }
 
     public function payCourse(string $codeCourse): PayDto

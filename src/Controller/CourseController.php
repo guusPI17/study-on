@@ -259,7 +259,7 @@ class CourseController extends AbstractController
                 $courseDto->setTitle($form->get('name')->getData());
 
                 // запрос к билинг сервису
-                $responseDto = $this->billingClient->editCourses($courseDto);
+                $responseDto = $this->billingClient->editCourses($codeCourse, $courseDto);
 
                 $this->getDoctrine()->getManager()->flush();
             } catch (FailureResponseException $e) {
