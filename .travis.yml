@@ -22,7 +22,7 @@ before_install:
   - sudo /etc/init.d/mysql stop
   - sudo /etc/init.d/postgresql stop
   - cp .env.test.local.travis .env.test.local
-  - docker network create studyonbilling_default
+  - docker network create study-onbilling_default
 
 install:
   - docker-compose build
